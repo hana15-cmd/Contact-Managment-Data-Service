@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Teams</title>
+</head>
+<body>
+    <h1>Teams List</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Team Name</th>
+                <th>Team Location</th>
+                <th>Number of Members</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for team in teams %}
+            <tr>
+                <td>{{ team['id'] }}</td>
+                <td>{{ team['team_name'] }}</td>
+                <td>{{ team['team_location'] }}</td>
+                <td>{{ team['Number_of_members'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
