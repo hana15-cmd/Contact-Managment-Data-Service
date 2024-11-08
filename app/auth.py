@@ -1,34 +1,35 @@
-from flask import Blueprint, render_template,request,flash
+import sqlite3
+from flask import Blueprint, redirect, render_template,request,flash, url_for
+
+from app.flaskloginin import load_user, verify_user
 
 auth = Blueprint('auth',__name__)
 
+from flask import Blueprint, request, redirect, url_for, flash, render_template, session
+from werkzeug.security import generate_password_hash, check_password_hash
 
+auth = Blueprint('auth', __name__)
 
-
-@auth.route('/login', methods=['GET','POST'])
+@auth.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('profile'))
-    form = LoginForm()
-    if form.validate_on_submit():
-        with sqlite3.connect('login.db') as conn:
-            curs = conn.cursor()
-            curs.execute("SELECT * FROM login WHERE email = ?", (form.email.data,))
-            user_data = curs.fetchone()
-        if user_data:
-            user = load_user(user_data[0])
-            if user and user.password == form.password.data:
-                login_user(user, remember=form.remember.data)
-                flash(f'Logged in successfully as {form.email.data.split("@")[0]}')
-                return redirect(url_for('profile'))
-            else:
-                flash('Login unsuccessful. Check your credentials and try again.')
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        db = get_db()
+        user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+
+        if user and check_password_hash(user['password'], password):
+            session.clear()
+            session['user_id'] = user['id']
+            flash('Logged in successfully!')
+            return redirect(url_for('views.home'))
         else:
-            flash('No account found with that email.')
-    return render_template('login.html', title='Login', form=form)
+            flash('Invalid username or password.')
 
+    return render_template('login.html')
 
-
+   
 @auth.route('/logout')
 def logout():
     return render_template("logout.html")

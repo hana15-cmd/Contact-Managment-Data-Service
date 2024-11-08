@@ -1,54 +1,35 @@
-from flask import Flask,g
 import sqlite3
-from flask_login import LoginManger, UserMixin
+import hashlib
 
-login_manager = LoginManger()
-login_manager.login_view ='login'
-
-DATABASE = 'login.db'
-
-def create_database():
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    c.execute(''' CREATE TABLE IF NOT EXISTS login(
-                    user_id INTERGER PRIMARY KEY AUTOINCREMENT,
-                    email   TEXT NOT NULL,
-                    password TEXT NOT NULL
-              )''')
+def init_db():
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            username TEXT PRIMARY KEY,
+            password TEXT NOT NULL,
+            role TEXT DEFAULT 'user'
+        )
+    ''')
     conn.commit()
     conn.close()
-    create_database
 
-class User(UserMixin):
-    def __init__(self,id, email, password):
-        self.id = str(id)
-        self.email = email
-        self.password = password
-        self.authenticated = False
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 
-    def is_active(self):
-        return True
-
-    def is_anonymous(self):
-        return False
-
-    def is_authenticated(self):
-        return self.authenticated
-
-    def get_id(self):
-        return self.id
-
-@login_manager.user_loader
-def load_user(user_id):
-    conn = sqlite3.connect(DATABASE)
-    curs = conn.cursor()
-    curs.execute("SELECT * FROM login WHERE user_id = ?", (user_id,))
-    user_data = curs.fetchone()
+def add_user_to_database(username,hashed_password,role='user'):
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO users(username, password,role) VALUES (?, ?. ?)'),
+    conn.commit()
     conn.close()
 
-    if user_data is None:
-        return None
-    else:
-        return User(int(user_data[0]), user_data[1], user_data[2])
-
-
+def verify_user(username,password):
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    hashed_password = hash_password(password)
+    cursor.execute("SELECT role FROM users WHERE username = ? AND password = ?",
+                   (username, hashed_password))
+    result = cursor.fetchone()
+    conn.close()
+    return (result is not None, result[0] if result else None)
