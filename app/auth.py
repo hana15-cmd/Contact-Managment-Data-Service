@@ -1,58 +1,81 @@
-import sqlite3
-from flask import Blueprint, redirect, render_template,request,flash, url_for
+# import sqlite3
+# from flask import Blueprint, redirect, render_template, request, flash, url_for, session, g
+# from werkzeug.security import generate_password_hash, check_password_hash
 
-from app.flaskloginin import load_user, verify_user
+# auth = Blueprint('auth', __name__)
 
-auth = Blueprint('auth',__name__)
+# def get_db_connection():
+#     conn = sqlite3.connect('database.db')
+#     conn.row_factory = sqlite3.Row
+#     return conn
 
-from flask import Blueprint, request, redirect, url_for, flash, render_template, session
-from werkzeug.security import generate_password_hash, check_password_hash
+# @auth.route('/login', methods=['GET', 'POST'])
+# def login():
+#      if request.method == 'POST':
+#         email = request.form['email']
+#         password = request.form['password']
 
-auth = Blueprint('auth', __name__)
+#         conn = get_db_connection()
+#         cursor = conn.cursor()
 
-@auth.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+#         cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+#         user = cursor.fetchone()
+#         conn.close()
+        
+#         if user and check_password_hash(user['password'], password):
+#             session['user_id'] = user['id']
+#             flash("Login successful!", "success")
+#             return redirect(url_for('dashboard'))  # Redirect to a dashboard or home page
+#         else:
+#             flash("Invalid email or password.", "error")
+#             return redirect(url_for('auth.login'))
+        
+#      return render_template('login.html')
 
-        db = get_db()
-        user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+# @auth.route('/logout')
+# def logout():
+#     session.clear()
+#     flash('You have been logged out.', category="info")
+#     return redirect(url_for('auth.login'))
 
-        if user and check_password_hash(user['password'], password):
-            session.clear()
-            session['user_id'] = user['id']
-            flash('Logged in successfully!')
-            return redirect(url_for('views.home'))
-        else:
-            flash('Invalid username or password.')
 
-    return render_template('login.html')
+# @auth.route('/sign', methods=['POST', 'GET'])
+# def signup():
+#     if request.method == 'POST':
+#         email = request.form.get('email')
+#         first_name = request.form.get('firstName')
+#         password1 = request.form.get('password1')
+#         password2 = request.form.get('password2')
 
-   
-@auth.route('/logout')
-def logout():
-    return render_template("logout.html")
+#         if not all([email,first_name,password1,password2]):
+#             flash ("All fields are required", "error")
+#             return redirect(url_for('auth.signup'))
+        
+#         if password1 != password2:
+#             flash("Passwords do not match.","error")
+#             return redirect(url_for('auth.signup'))
+        
+#         if len(password1) < 8:
+#             flash("Password must be at least 8 characters long.", "error")
+#             return redirect(url_for('auth.signup'))
+            
+#         hashed_password = generate_password_hash(password1, method='pbkdf2:sha256')
+        
+#         try:
+#             conn = get_db_connection()
+#             cursor = conn.cursor()
 
-@auth.route('/sign', methods=['GET', 'POST'])
-def sign_up():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        firstName = request.form.get('firstName')
-        password1 = request.form.get('password1')
-        password2 = request.form.get('password2')
+#             cursor.execute("INSERT INTO users (email,first_name,password) VALUES (?,?, ?)",
+#             (email,first_name,hashed_password))
+#             conn.commit()
+#             conn.close()
 
-        # Perform validation checks within the POST request scope
-        if len(email) < 2:
-            flash('Email length must be more than 2 characters', category="error")
-            print("email"),
-        elif len(firstName) < 1: 
-            flash('First Name length must be more than 1 character', category="error")
-        elif password1 != password2:
-            flash('Passwords do not match', category="error")
-        elif len(password1) < 8:
-            flash('Password must have more than 8 characters', category="error")
-        else:
-            flash('Successfully created account!', category="success") 
-    return render_template("sign_up.html")
+#             flash("Account created successfully!", "success")
+#             return redirect(url_for('login'))
+        
+#         except sqlite3.IntegrityError:
+#             flash("Username already exists.", "error")
+#             return redirect(url_for('signup'))
+ 
+#     return render_template("sign_up.html")
 

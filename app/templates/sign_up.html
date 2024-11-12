@@ -1,48 +1,49 @@
-{% extends "base.html" %} {% block title %}Sign Up{% endblock %} {% block content %}
+{% extends "base.html" %} 
 
+{% block title %}Sign Up{% endblock %} 
+
+{% block content %}
 <form method="POST">
     <h3 align="center"> Sign Up</h3>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Email Input -->
     <div class="form-group">
         <label for="email">Email Address</label>
         <input 
-        type="email" 
-        class="form-control"
-         id="email" 
-         name="email" 
-         placeholder="Please enter your email address"
-         />
+            type="email" 
+            class="form-control"
+            id="email" 
+            name="email" 
+            placeholder="Please enter your email address" 
+            required>
     </div>
+
+    <!-- First Name Input -->
     <div class="form-group">
         <label for="firstName">First Name</label>
         <input 
-        type="text" 
-        class="form-control"
-         id="firstName" 
-         name="firstName" 
-         placeholder="Please enter your First Name"
-         />
+            type="text" 
+            class="form-control"
+            id="firstName" 
+            name="firstName" 
+            placeholder="Please enter your First Name" 
+            required>
     </div>
+
+    <!-- Password Input -->
     <div class="form-group">
         <label for="password1">Password</label>
-        <input 
-        type="password" 
-        class="form-control"
-         id="password1" 
-         name="password1" 
-         placeholder="Please enter your password"
-         />
-    </div>
-    <div class="form-group">
-        <label for="password2">Confirm Password</label>
-        <input 
-        type="password" 
-        class="form-control"
-         id="password2" 
-         name="password2" 
-         placeholder="Please confirm your password"
-         />
-    </div>
-    <br />
-    <button type="submit" class="btn btn-primary">Submit</button>
-</form>
-{% endblock %}
+        <input>
