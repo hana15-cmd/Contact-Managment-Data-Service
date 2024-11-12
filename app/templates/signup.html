@@ -1,11 +1,13 @@
-{% extends "base.html" %} 
+{% extends "base.html" %}
 
-{% block title %}Sign Up{% endblock %} 
+{% block title %}Sign Up{% endblock %}
 
 {% block content %}
-<form method="POST">
+<form method="POST" action="{{ url_for('signup') }}">
+    
     <h3 align="center"> Sign Up</h3>
 
+    <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -28,7 +30,8 @@
             id="email" 
             name="email" 
             placeholder="Please enter your email address" 
-            required>
+            required
+            aria-label="Email Address">
     </div>
 
     <!-- First Name Input -->
@@ -38,12 +41,39 @@
             type="text" 
             class="form-control"
             id="firstName" 
-            name="firstName" 
+            name="first_name" 
             placeholder="Please enter your First Name" 
-            required>
+            required
+            aria-label="First Name">
     </div>
 
     <!-- Password Input -->
     <div class="form-group">
-        <label for="password1">Password</label>
-        <input>
+        <label for="password">Password</label>
+        <input 
+            type="password" 
+            class="form-control"
+            id="password" 
+            name="password" 
+            placeholder="Please enter your password" 
+            required
+            aria-label="Password">
+    </div>
+
+    <!-- Confirm Password Input -->
+    <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <input 
+            type="password" 
+            class="form-control"
+            id="confirmPassword" 
+            name="confirm_password" 
+            placeholder="Please confirm your password" 
+            required
+            aria-label="Confirm Password">
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-primary">Sign Up</button>
+</form>
+{% endblock %}
