@@ -30,14 +30,13 @@ def init_db_scheme():
             database.commit()
 
  
-def init_database_with_dummy_data():
-    with app.app_context():
-        database=get_database
-        with app.open_resource('schemadb.sql', mode='r') as f: 
-            database.cursor().executescript(f.read())
-            add_entry('Blue','London',10,'blue@db.com',4455212347)
-            database.commit()
-
+# def init_database_with_dummy_data():
+#     with app.app_context():
+#         database=get_database
+#         with app.open_resource('schemadb.sql', mode='r') as f: 
+#             database.cursor().executescript(f.read())
+#             add_entry('Blue','London',10,'blue@db.com',4455212347)
+#             database.commit()
         
 
 def add_entry(email, first_name, password):
@@ -49,12 +48,12 @@ def add_entry(email, first_name, password):
     )
     database.commit()
 
-def add_entry(team_name, team_location, number_of_team_members,team_email_address,team_phone_number):
-    database = get_database()
-    database.execute(
-        "insert into teams(TEAM_NAME,TEAM_LOCATION,NUMBER_OF_TEAM_MEMBERS,EMAIL_ADDRESS,PHONE_NUMBER)) values (?,?,?,?,?) ",
-                    (team_name,team_location,number_of_team_members,team_email_address,team_phone_number))
-    database.commit()
+# def add_entry(team_name, team_location, number_of_team_members,team_email_address,team_phone_number):
+#     database = get_database()
+#     database.execute(
+#         "insert into teams(TEAM_NAME,TEAM_LOCATION,NUMBER_OF_TEAM_MEMBERS,EMAIL_ADDRESS,PHONE_NUMBER)) values (?,?,?,?,?) ",
+#                     (team_name,team_location,number_of_team_members,team_email_address,team_phone_number))
+#     database.commit()
 
 views = Blueprint('views',__name__)
 
@@ -72,11 +71,11 @@ def signup():
 
         if not all([email, first_name, password, confirm_password]):
             flash('All fields are required.', 'error')
-            return redirect(url_for('signup'))
+            return redirect(url_for('views.signup'))
 
         if password != confirm_password:
             flash('Passwords do not match. Please try again.','error')
-            return redirect(url_for('signup'))
+            return redirect(url_for('views.signup'))
 
         database = get_database()
         existing_user = database.execute(
@@ -106,7 +105,7 @@ def login():
             session['user_id'] = user['id']
             session['user_name'] = user['first_name']
             flash('You were successfully logged in')
-            return redirect(url_for('contacts'))  # Redirect to home after login
+            return redirect(url_for('views.contacts'))  # Redirect to home after login
         else:
             flash('Invalid username or password')
 
