@@ -1,6 +1,7 @@
 from flask import Blueprint,render_template
 import os
 import sqlite3
+import sqlite3 as sql
 from flask import Flask, g, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -28,6 +29,17 @@ def init_db_scheme():
             database.executescript(f.read())
             database.commit()
 
+ 
+def init_database_with_dummy_data():
+    with app.app_context():
+        database=get_database
+        with app.open_resource('schemadb.sql', mode='r') as f: 
+            database.cursor().executescript(f.read())
+            add_entry('Blue','London',10,'blue@db.com',4455212347)
+            database.commit()
+
+        
+
 def add_entry(email, first_name, password):
     database = get_database()
     hashed_password = generate_password_hash(password)
@@ -36,6 +48,14 @@ def add_entry(email, first_name, password):
         (email, first_name, hashed_password)
     )
     database.commit()
+
+def add_entry(team_name, team_location, number_of_team_members,team_email_address,team_phone_number):
+    database = get_database()
+    database.execute(
+        "insert into teams(TEAM_NAME,TEAM_LOCATION,NUMBER_OF_TEAM_MEMBERS,EMAIL_ADDRESS,PHONE_NUMBER)) values (?,?,?,?,?) ",
+                    (team_name,team_location,number_of_team_members,team_email_address,team_phone_number))
+    database.commit()
+
 views = Blueprint('views',__name__)
 
 @views.route('/')
@@ -65,11 +85,11 @@ def signup():
 
         if existing_user:
             flash('User already exists. Please log in.', 'error')
-            return redirect(url_for('login'))
+            return redirect(url_for('views.login'))
 
         add_entry(email, first_name, password)
         flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('login'))
+        return redirect(url_for('views.login'))
     return render_template('sign.html')
 
 @views.route('/login/',methods=['GET', 'POST'])
@@ -86,19 +106,23 @@ def login():
             session['user_id'] = user['id']
             session['user_name'] = user['first_name']
             flash('You were successfully logged in')
-            return redirect(url_for('views.contacts'))  # Redirect to home after login
+            return redirect(url_for('contacts'))  # Redirect to home after login
         else:
             flash('Invalid username or password')
 
     return render_template('login.html')
 
 @views.route('/contactManager')
-def conatcts():
-    return render_template('tables.html')
+def contacts():
+    database = get_database()
+    cursor = database.cursor()
+    cursor.execute("SELECT * FROM teams")
+    data = cursor.fetchall()
+    return render_template("index.html")
 
 @views.route('/logout')
 def logout():
     session.pop('user_id', None)
     session.pop('user_name', None)
     flash('You were successfully logged out')
-    return redirect(url_for('login'))
+    return redirect(url_for('views.login'))
