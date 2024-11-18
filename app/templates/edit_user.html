@@ -3,7 +3,7 @@
   <div class='row'>
     <div class='col-5 mx-auto'>
       <h3>Edit user</h3><hr>
-      <form method='post' action='{{url_for("edit_team",id=datas.ID)}}'>
+      <form method='post' action='{{url_for("views.edit_team",id=datas.ID)}}'>
         <div class='form-group'>
             <label>Team Name</label>
             <input type='text' name='teamName' required class='form-control'>

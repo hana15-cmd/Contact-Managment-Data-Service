@@ -40,8 +40,20 @@ def add_entry(email, first_name, password):
     )
     database.commit()
 
+# def add_dummy_teams_data():
+#     database = get_database()
+    # database.execute("""
+    #     INSERT INTO teams (team_name, team_location, number_of_team_members, email_address, phone_number)
+    #     VALUES
+    #         ('Rover', 'Pune', 7, 'rover@teams.com', 1234567890),
+    #         ('Grogu', 'London', 10, 'grogu@teams.com', 2345678901),
+    #         ('Yoda', 'Tokyo', 8, 'yoda@teams.com', 3456789012);
+    # """)
+    # database.commit()
+
 def add_dummy_teams_data():
     database = get_database()
+    database.execute("DELETE FROM teams")  # Clears the table
     database.execute("""
         INSERT INTO teams (team_name, team_location, number_of_team_members, email_address, phone_number)
         VALUES
@@ -115,6 +127,9 @@ def contacts():
     data = cursor.fetchall()
     return render_template("index.html", datas=data)
 
+from flask import render_template, request, redirect, url_for, flash
+import sqlite3 as sql
+
 @views.route("/add_team", methods=['POST', 'GET'])
 def add_team():
     if request.method == 'POST':
@@ -133,15 +148,21 @@ def add_team():
         # Convert inputs to appropriate types
         try:
             number_of_team_members = int(number_of_team_members)
-            team_phone_number = int(team_phone_number)
         except ValueError:
-            flash('Invalid input for number of team members or phone number!', category='error')
+            flash('Invalid input for number of team members!', category='error')
+            return redirect(url_for('views.add_team'))
+
+        # Validate phone number (ensure it only contains digits or valid characters for phone number)
+        if not team_phone_number.isdigit():
+            flash('Invalid phone number! Please ensure it contains only digits.', category='error')
             return redirect(url_for('views.add_team'))
 
         # Save to the database
         try:
             con = sql.connect(app.config['DATABASE'])
             cur = con.cursor()
+
+            # Insert data into the database
             cur.execute(
                 """
                 INSERT INTO teams (TEAM_NAME, TEAM_LOCATION, NUMBER_OF_TEAM_MEMBERS, EMAIL_ADDRESS, PHONE_NUMBER)
@@ -151,14 +172,15 @@ def add_team():
             )
             con.commit()
 
+            # Optionally, fetch and print the teams to verify insertion
             cur.execute("SELECT * FROM teams")
             print("Database contents:", cur.fetchall())
-            
+
             flash('Team added successfully!', category='success')
-        except sql.Error as e:
-            flash(f"Database error: {e}", category='error')
+        except Exception as e:
+            flash(f'Error occurred while adding the team: {str(e)}', category='error')
         finally:
-            con.close()
+            con.close()  # Ensure the connection is closed
 
         return redirect(url_for("views.contacts"))
 
