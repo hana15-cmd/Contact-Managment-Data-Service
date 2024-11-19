@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 app.config.update(dict(
     DATABASE=os.path.join(app.root_path, os.getenv('DATABASE', 'database.db')),
-    SECRET_KEY=os.urandom(24),))
+    SECRET_KEY=['hihihi']))
 
 
 def connection_database():
@@ -133,31 +133,25 @@ import sqlite3 as sql
 @views.route("/add_team", methods=['POST', 'GET'])
 def add_team():
     if request.method == 'POST':
-        # Extract form data
         team_name = request.form.get('team_name')
         team_location = request.form.get('team_location')
         number_of_team_members = request.form.get('number_of_team_members')
         team_email_address = request.form.get('team_email_address')
         team_phone_number = request.form.get('team_phone_number')
 
-        # Validate required fields
         if not all([team_name, team_location, number_of_team_members, team_email_address, team_phone_number]):
             flash('All fields are required!', category='error')
             return redirect(url_for('views.add_team'))
 
-        # Convert inputs to appropriate types
         try:
             number_of_team_members = int(number_of_team_members)
         except ValueError:
             flash('Invalid input for number of team members!', category='error')
             return redirect(url_for('views.add_team'))
 
-        # Validate phone number (ensure it only contains digits or valid characters for phone number)
         if not team_phone_number.isdigit():
             flash('Invalid phone number! Please ensure it contains only digits.', category='error')
             return redirect(url_for('views.add_team'))
-
-        # Save to the database
         try:
             con = sql.connect(app.config['DATABASE'])
             cur = con.cursor()
@@ -171,8 +165,6 @@ def add_team():
                 (team_name, team_location, number_of_team_members, team_email_address, team_phone_number)
             )
             con.commit()
-
-            # Optionally, fetch and print the teams to verify insertion
             cur.execute("SELECT * FROM teams")
             print("Database contents:", cur.fetchall())
 
@@ -180,7 +172,7 @@ def add_team():
         except Exception as e:
             flash(f'Error occurred while adding the team: {str(e)}', category='error')
         finally:
-            con.close()  # Ensure the connection is closed
+            con.close()
 
         return redirect(url_for("views.contacts"))
 
