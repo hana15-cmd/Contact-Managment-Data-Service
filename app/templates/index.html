@@ -26,8 +26,8 @@
       <td>{{ row['NUMBER_OF_TEAM_MEMBERS'] }}</td>
       <td>{{ row['EMAIL_ADDRESS'] }}</td>
       <td>{{ row['PHONE_NUMBER'] }}</td>
-      <td><a href='{{ url_for("views.edit_team", uid=row.UID) }}' class='btn btn-primary'>Edit</a></td>
-      <td><a href='{{ url_for("views.delete_teams", uid=row.UID) }}' class='btn btn-danger' onclick='return confirm("Are you sure you want to delete this team?")'>Delete</a></td>
+      <td><a href='{{ url_for("views.edit_team", id=row.ID) }}' class='btn btn-primary'>Edit</a></td>
+      <td><a href='{{ url_for("views.delete_teams", id=row.ID) }}' class='btn btn-danger' onclick='return confirm("Are you sure you want to delete this team?")'>Delete</a></td>
     </tr>
     {% endfor %}
   </tbody>

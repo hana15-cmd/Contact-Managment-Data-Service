@@ -1,67 +1,12 @@
 from flask import Blueprint,render_template
-
+from flask import current_app
 import os
 import sqlite3
 import sqlite3 as sql
 from flask import Flask, g, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 
-app = Flask(__name__)
-
-app.config.update(dict(
-    DATABASE=os.path.join(app.root_path, os.getenv('DATABASE', 'database.db')),
-    SECRET_KEY=['hihihi']))
-
-
-def connection_database():
-    connection = sqlite3.connect(app.config['DATABASE'])
-    connection.row_factory = sqlite3.Row
-    return connection
-
-def get_database():
-    if not hasattr(g, 'sqlite_database'):
-        g.sqlite_database = connection_database()
-    return g.sqlite_database
-
-def init_db_scheme():
-    with app.app_context():
-        database = get_database()
-        with app.open_resource('schemadb.sql', mode='r') as f:
-            database.executescript(f.read())
-        add_dummy_teams_data()
-        database.commit()
-
-def add_entry(email, first_name, password):
-    database = get_database()
-    hashed_password = generate_password_hash(password)
-    database.execute(
-        "INSERT INTO users (email, first_name, password) VALUES (?, ?, ?)",
-        (email, first_name, hashed_password)
-    )
-    database.commit()
-
-# def add_dummy_teams_data():
-#     database = get_database()
-    # database.execute("""
-    #     INSERT INTO teams (team_name, team_location, number_of_team_members, email_address, phone_number)
-    #     VALUES
-    #         ('Rover', 'Pune', 7, 'rover@teams.com', 1234567890),
-    #         ('Grogu', 'London', 10, 'grogu@teams.com', 2345678901),
-    #         ('Yoda', 'Tokyo', 8, 'yoda@teams.com', 3456789012);
-    # """)
-    # database.commit()
-
-def add_dummy_teams_data():
-    database = get_database()
-    database.execute("DELETE FROM teams")  # Clears the table
-    database.execute("""
-        INSERT INTO teams (team_name, team_location, number_of_team_members, email_address, phone_number)
-        VALUES
-            ('Rover', 'Pune', 7, 'rover@teams.com', 1234567890),
-            ('Grogu', 'London', 10, 'grogu@teams.com', 2345678901),
-            ('Yoda', 'Tokyo', 8, 'yoda@teams.com', 3456789012);
-    """)
-    database.commit()
+from app.models import add_entry, get_database
 
 views = Blueprint('views',__name__)
 
@@ -153,7 +98,7 @@ def add_team():
             flash('Invalid phone number! Please ensure it contains only digits.', category='error')
             return redirect(url_for('views.add_team'))
         try:
-            con = sql.connect(app.config['DATABASE'])
+            con = sql.connect(current_app.config['DATABASE'])
             cur = con.cursor()
 
             # Insert data into the database
@@ -178,7 +123,7 @@ def add_team():
 
     return render_template('add_team.html')
 
-@views.route("/edit_team/<string:uid>",methods=['POST','GET'])
+@views.route("/edit_team/<string:id>",methods=['POST','GET'])
 def edit_team(id):
     if request.method=='POST':
         team_name=request.form['teamName']
@@ -186,27 +131,31 @@ def edit_team(id):
         number_of_team_members=request.form['numberOfTeamMembers']
         team_email_address=request.form['EmailAddress']
         team_phone_number=request.form['PhoneNumber']
-        con=sql.connect("teamDatabase.db")
+        con = sql.connect(current_app.config['DATABASE'])
         cur=con.cursor()
-        cur.execute("update teams set TEAM_NAME=?,CONTACT=? where ID=?",(team_name,team_location,number_of_team_members,team_email_address,team_phone_number,id))
+        cur.execute("""
+            UPDATE teams 
+            SET TEAM_NAME=?, TEAM_LOCATION=?, NUMBER_OF_TEAM_MEMBERS=?, EMAIL_ADDRESS=?, PHONE_NUMBER=? 
+            WHERE id=?
+        """, (team_name, team_location, number_of_team_members, team_email_address, team_phone_number, id))
         con.commit()
         flash('Team Updated','success')
-        return redirect(url_for("index"))
-    con=sql.connect("teamDatabase.db")
+        return redirect(url_for("views.contacts"))
+    con = sql.connect(current_app.config['DATABASE'])
     con.row_factory=sql.Row
     cur=con.cursor()
-    cur.execute("select * from teams where ID=?",(id,))
+    cur.execute("SELECT * FROM teams where ID=?",(id,))
     data=cur.fetchone()
-    return render_template("edit_team.html",datas=data)
-    
-@views.route("/delete_team/<string:uid>",methods=['GET'])
+    return render_template('edit_team.html',datas=data)
+
+@views.route("/delete_team/<string:id>",methods=['GET'])
 def delete_teams(id):
-    con=sql.connect("teamDatabase.db")
+    con = sql.connect(current_app.config['DATABASE'])
     cur=con.cursor()
     cur.execute("delete from teams where ID=?",(id))
     con.commit()
     flash('Team Deleted','warning')
-    return redirect(url_for("index"))
+    return redirect(url_for("views.contacts"))
 
 @views.route('/logout')
 def logout():
