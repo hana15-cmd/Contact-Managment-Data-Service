@@ -1,11 +1,44 @@
 {% extends "base.html" %}
 
 {% block content %}
-<p class="text-right" style="padding: 15px;">
-  <a href="{{ url_for('views.add_team') }}" class="btn btn-primary">+Add Team</a>
-</p>
-<table class='table table-bordered'>
-  <thead>
+<h1 class="text-center" style="margin-top: 20px;">Team Details</h1>
+
+<!-- Container for Search Bar and Add Team Button -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <!-- Search and Filter Form -->
+  <form method="get" action="{{ url_for('views.contacts') }}" class="form-inline align-items-center">
+    <div class="form-group mr-2">
+      <input 
+        type="text" 
+        name="search" 
+        class="form-control" 
+        placeholder="Search..." 
+        value="{{ search_query }}" 
+        style="min-width: 250px;"
+      >
+    </div>
+    <div class="form-group mr-2">
+      <select name="filter" class="form-control">
+        <option value="">All Columns</option>
+        <option value="TEAM_NAME" {% if filter_column == "TEAM_NAME" %}selected{% endif %}>Team Name</option>
+        <option value="TEAM_LOCATION" {% if filter_column == "TEAM_LOCATION" %}selected{% endif %}>Team Location</option>
+        <option value="EMAIL_ADDRESS" {% if filter_column == "EMAIL_ADDRESS" %}selected{% endif %}>Email Address</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary mr-2">
+      <i class="fas fa-search"></i> Search
+    </button>
+  </form>
+
+  <!-- Add Team Button -->
+  <a href="{{ url_for('views.add_team') }}" class="btn btn-success">
+    <i class="fas fa-plus"></i> Add Team
+  </a>
+</div>
+
+<!-- Team Table -->
+<table class='table table-bordered table-hover'>
+  <thead class="thead-light">
     <tr>
       <th>ID</th>
       <th>Team Name</th>
@@ -13,6 +46,7 @@
       <th>Number Of Team Members</th>
       <th>Email Address</th>
       <th>Phone Number</th>
+      <th>View Members</th>
       <th>Edit</th>
       <th>Delete</th>
     </tr>
@@ -26,10 +60,24 @@
       <td>{{ row['NUMBER_OF_TEAM_MEMBERS'] }}</td>
       <td>{{ row['EMAIL_ADDRESS'] }}</td>
       <td>{{ row['PHONE_NUMBER'] }}</td>
-      <td><a href='{{ url_for("views.edit_team", id=row.ID) }}' class='btn btn-primary'>Edit</a></td>
-      <td><a href='{{ url_for("views.delete_teams", id=row.ID) }}' class='btn btn-danger' onclick='return confirm("Are you sure you want to delete this team?")'>Delete</a></td>
+      <td>
+        <a href="{{ url_for('views.see_team_members', id=row.ID) }}" class="btn btn-info">
+          <i class="fas fa-users"></i> View Members
+        </a>
+      </td>
+      <td>
+        <a href="{{ url_for('views.edit_team', id=row.ID) }}" class="btn btn-primary">
+          <i class="fas fa-edit"></i> Edit
+        </a>
+      </td>
+      <td>
+        <a href="{{ url_for('views.delete_teams', id=row.ID) }}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this team?')">
+          <i class="fas fa-trash"></i> Delete
+        </a>
+      </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 {% endblock %}
+

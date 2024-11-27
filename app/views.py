@@ -5,8 +5,9 @@ import sqlite3
 import sqlite3 as sql
 from flask import Flask, g, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
-
 from app.models import add_entry, get_database
+from flask import render_template, request, redirect, url_for, flash
+import sqlite3 as sql
 
 views = Blueprint('views',__name__)
 
@@ -64,16 +65,68 @@ def login():
 
     return render_template('login.html')
 
+@views.route('/init_db')
+def initialize_db():
+    try:
+        from app.models import init_db_scheme, add_dummy_teams_data
+        init_db_scheme()  # Set up the database schema
+        add_dummy_teams_data()  # Populate with dummy data
+        flash('Database initialized successfully with dummy data!', 'success')
+        return redirect(url_for('views.home'))
+    except Exception as e:
+        flash(f'Error during database initialization: {str(e)}', 'danger')
+        return redirect(url_for('views.home'))
+
+
 @views.route('/contactManager')
 def contacts():
     database = get_database()
     cursor = database.cursor()
     cursor.execute("SELECT * FROM teams")
     data = cursor.fetchall()
+    if not data:
+        print("No data found in the teams table.")
+    else:
+        for row in data:
+            print(dict(row))  # Debugging output
     return render_template("index.html", datas=data)
 
-from flask import render_template, request, redirect, url_for, flash
-import sqlite3 as sql
+# @views.route('/contactManager', methods=['GET', 'POST'])
+# def contacts():
+#     # Get search and filter query parameters from the URL (default to empty if not provided)
+#     search_query = request.args.get('search', '')  # Get the search query from the URL
+#     filter_column = request.args.get('filter', '')  # Get the filter column (optional)
+
+#     # Establish database connection
+#     database = get_database()
+#     cursor = database.cursor()
+
+#     # Start with the base SQL query
+#     sql_query = "SELECT * FROM teams"
+#     sql_params = []
+
+#     # Modify the query based on user input
+#     if search_query:
+#         # If both search query and filter column are provided
+#         if filter_column:
+#             sql_query += f" WHERE {filter_column} LIKE ?"
+#             sql_params.append(f"%{search_query}%")
+#         else:
+#             # If no filter column is specified, search across multiple columns
+#             sql_query += """
+#                 WHERE TEAM_NAME LIKE ? 
+#                 OR TEAM_LOCATION LIKE ? 
+#                 OR EMAIL_ADDRESS LIKE ?
+#             """
+#             sql_params.extend([f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"])
+
+#     # Execute the query with parameters (this prevents SQL injection)
+#     cursor.execute(sql_query, sql_params)
+#     data = cursor.fetchall()
+
+#     # Return the template with the filtered data and search information
+#     return render_template("index.html", datas=data, search_query=search_query, filter_column=filter_column)
+
 
 @views.route("/add_team", methods=['POST', 'GET'])
 def add_team():
@@ -123,6 +176,37 @@ def add_team():
 
     return render_template('add_team.html')
 
+@views.route("/see_team_members/<string:id>", methods=['POST','GET'])
+def see_team_members(id):
+    
+    # Establish database connection
+    con = sql.connect(current_app.config['DATABASE'])
+    try:
+        cur = con.cursor()
+        
+        # Query to get team details
+        cur.execute("SELECT * FROM teams WHERE ID=?", (id,))
+        team = cur.fetchone()
+        
+        # If team is found, get team members (contacts)
+        if team:
+            cur.execute("SELECT * FROM contacts WHERE team_id=?", (id,))
+            members = cur.fetchall()  # Retrieve all members associated with the team
+        
+            # Pass team and members information to the template
+            return render_template("team_member_info.html", team=team, members=members)
+        else:
+            flash('Team not found', 'danger')
+            return redirect(url_for("views.contacts"))
+        
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for("views.contacts"))
+    finally:
+        cur.close()
+        con.close()
+
+
 @views.route("/edit_team/<string:id>",methods=['POST','GET'])
 def edit_team(id):
     if request.method=='POST':
@@ -148,13 +232,14 @@ def edit_team(id):
     data=cur.fetchone()
     return render_template('edit_team.html',datas=data)
 
-@views.route("/delete_team/<string:id>",methods=['GET'])
+@views.route("/delete_team/<string:id>", methods=['GET'])
 def delete_teams(id):
     con = sql.connect(current_app.config['DATABASE'])
-    cur=con.cursor()
-    cur.execute("delete from teams where ID=?",(id))
+    cur = con.cursor()
+    cur.execute("DELETE FROM teams WHERE ID=?", (id,))  # Add a comma here to make it a tuple
     con.commit()
-    flash('Team Deleted','warning')
+    con.close()  
+    flash('Team Deleted', 'warning')
     return redirect(url_for("views.contacts"))
 
 @views.route('/logout')

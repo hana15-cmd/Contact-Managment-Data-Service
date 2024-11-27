@@ -1,0 +1,54 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Members</title>
+</head>
+<body>
+    <h1>Team: {{ team.name }}</h1>
+    <h3>Members</h3>
+
+    <table class='table table-bordered table-hover'>
+        <thead class="thead-light">
+          <tr>
+            <th>ID</th>
+            <th>Team Name</th>
+            <th>Team Location</th>
+            <th>Number Of Team Members</th>
+            <th>Email Address</th>
+            <th>Phone Number</th>
+            <th>View Members</th>
+            <th>Edit</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in datas %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ row['TEAM_NAME'] }}</td>
+            <td>{{ row['TEAM_LOCATION'] }}</td>
+            <td>{{ row['NUMBER_OF_TEAM_MEMBERS'] }}</td>
+            <td>{{ row['EMAIL_ADDRESS'] }}</td>
+            <td>{{ row['PHONE_NUMBER'] }}</td>
+            <td>
+              <a href="{{ url_for('views.see_team_members', id=row.ID) }}" class="btn btn-info">
+                <i class="fas fa-users"></i> View Members
+              </a>
+            </td>
+            <td>
+              <a href="{{ url_for('views.see_team_members', id=row.ID) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit
+              </a>
+            </td>
+            <td>
+              <a href="{{ url_for('views.see_team_members', id=row.ID) }}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this team?')">
+                <i class="fas fa-trash"></i> Delete
+              </a>
+            </td>
+          </tr>
+
+    <a href="{{ url_for('views.contacts') }}">Back to Contacts</a>
+</body>
+</html> -->

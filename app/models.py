@@ -2,7 +2,6 @@ import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import current_app, g
 
-
 def connection_database():
     connection = sqlite3.connect(current_app.config['DATABASE'])
     connection.row_factory = sqlite3.Row
@@ -30,25 +29,23 @@ def add_entry(email, first_name, password):
     )
     database.commit()
 
-# def add_dummy_teams_data():
-#     database = get_database()
-    # database.execute("""
-    #     INSERT INTO teams (team_name, team_location, number_of_team_members, email_address, phone_number)
-    #     VALUES
-    #         ('Rover', 'Pune', 7, 'rover@teams.com', 1234567890),
-    #         ('Grogu', 'London', 10, 'grogu@teams.com', 2345678901),
-    #         ('Yoda', 'Tokyo', 8, 'yoda@teams.com', 3456789012);
-    # """)
-    # database.commit()
 
 def add_dummy_teams_data():
     database = get_database()
+    print("Clearing and adding dummy data to the teams table...")  # Debug statement
     database.execute("DELETE FROM teams")  # Clears the table
     database.execute("""
         INSERT INTO teams (team_name, team_location, number_of_team_members, email_address, phone_number)
         VALUES
-            ('Rover', 'Pune', 7, 'rover@teams.com', 1234567890),
-            ('Grogu', 'London', 10, 'grogu@teams.com', 2345678901),
-            ('Yoda', 'Tokyo', 8, 'yoda@teams.com', 3456789012);
+            ('Rover', 'Pune', 7, 'rover@teams.com', '57585858'),
+            ('Grogu', 'London', 10, 'grogu@teams.com', '2345678902'),
+            ('Galaxy', 'Rome', 10, 'galaxy@teams.com', '9754212567'),
+            ('Stars', 'Barcelona', 8, 'stars@teams.com', '33333333'),
+            ('Moon', 'London', 7, 'moon@teams.com', '67575744'),
+            ('Saturn', 'Banglore', 10, 'saturn@teams.com', '5555555'),
+            ('Midnight', 'Pune', 8, 'midnight@teams.com', '666688688'),
+            ('Twilight', 'Manchester', 8, 'twilight@teams.com', '999787564'),
+            ('Yoda', 'Tokyo', 8, 'yoda@teams.com', '4444444446');
     """)
     database.commit()
+    print("Dummy data successfully added!")  # Debug statement
