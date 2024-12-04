@@ -2,6 +2,7 @@ import os
 from flask import Flask, g
 import sqlite3
 from .views import views
+# from .auth import auth
 
 def create_app():
     app = Flask(__name__)

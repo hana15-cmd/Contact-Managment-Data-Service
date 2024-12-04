@@ -54,16 +54,20 @@
   <tbody>
     {% for row in datas %}
     <tr>
-      <td>{{ loop.index }}</td>
+      <td>{{ row.ID }}</td>
       <td>{{ row['TEAM_NAME'] }}</td>
       <td>{{ row['TEAM_LOCATION'] }}</td>
       <td>{{ row['NUMBER_OF_TEAM_MEMBERS'] }}</td>
       <td>{{ row['EMAIL_ADDRESS'] }}</td>
       <td>{{ row['PHONE_NUMBER'] }}</td>
       <td>
+        {% if row.ID %}
         <a href="{{ url_for('views.see_team_members', id=row.ID) }}" class="btn btn-info">
           <i class="fas fa-users"></i> View Members
         </a>
+        {% else %}
+        <span class="text-danger">No ID Available</span>
+        {% endif %}
       </td>
       <td>
         <a href="{{ url_for('views.edit_team', id=row.ID) }}" class="btn btn-primary">
@@ -76,8 +80,20 @@
         </a>
       </td>
     </tr>
+    {% else %}
+    <!-- Show a message if no teams are found -->
+    <tr>
+      <td colspan="9" class="text-center text-muted">No teams found. Add a new team to get started.</td>
+    </tr>
     {% endfor %}
   </tbody>
 </table>
-{% endblock %}
 
+<!-- Debugging Section (for developers, can be removed in production)
+{% if datas %}
+<div class="alert alert-info mt-4">
+  <strong>Debug Info:</strong>
+  <pre>{{ datas | safe }}</pre>
+</div> -->
+{% endif %}
+{% endblock %}
