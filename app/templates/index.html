@@ -75,9 +75,13 @@
         </a>
       </td>
       <td>
-        <a href="{{ url_for('views.delete_teams', id=row.ID) }}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this team?')">
-          <i class="fas fa-trash"></i> Delete
-        </a>
+        {% if session.get('is_admin') %}
+          <a href="{{ url_for('views.delete_team', id=row.ID) }}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this team?')">
+            <i class="fas fa-trash"></i> Delete
+          </a>
+        {% else %}
+          <span class="text-muted">Delete Disabled</span>
+        {% endif %}
       </td>
     </tr>
     {% else %}

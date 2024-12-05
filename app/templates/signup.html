@@ -3,16 +3,18 @@
 {% block title %}Sign Up{% endblock %}
 
 {% block content %}
-<form method="POST" action="{{ url_for('signup') }}">
-    
-    <h3 align="center"> Sign Up</h3>
+<form method="POST" action="{{ url_for('auth.signup') }}">
+    <h3 align="center">Sign Up</h3>
+
+    <!-- CSRF Token -->
+    {{ form.hidden_tag() }}
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
                 <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
+                    <strong>{{ message }}</strong>
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -23,57 +25,102 @@
 
     <!-- Email Input -->
     <div class="form-group">
-        <label for="email">Email Address</label>
-        <input 
-            type="email" 
-            class="form-control"
-            id="email" 
-            name="email" 
-            placeholder="Please enter your email address" 
-            required
-            aria-label="Email Address">
+        {{ form.email.label(class="form-label") }}
+        {{ form.email(class="form-control", placeholder="Please enter your email address") }}
+        {% for error in form.email.errors %}
+            <div class="alert alert-danger mt-2">
+                <strong>{{ error }}</strong>
+            </div>
+        {% endfor %}
     </div>
 
     <!-- First Name Input -->
     <div class="form-group">
-        <label for="firstName">First Name</label>
-        <input 
-            type="text" 
-            class="form-control"
-            id="firstName" 
-            name="first_name" 
-            placeholder="Please enter your First Name" 
-            required
-            aria-label="First Name">
+        {{ form.first_name.label(class="form-label") }}
+        {{ form.first_name(class="form-control", placeholder="Please enter your First Name") }}
+        {% for error in form.first_name.errors %}
+            <div class="alert alert-danger mt-2">
+                <strong>{{ error }}</strong>
+            </div>
+        {% endfor %}
     </div>
 
     <!-- Password Input -->
-    <div class="form-group">
-        <label for="password">Password</label>
-        <input 
-            type="password" 
-            class="form-control"
-            id="password" 
-            name="password" 
-            placeholder="Please enter your password" 
-            required
-            aria-label="Password">
+    <div class="form-group position-relative">
+        {{ form.password.label(class="form-label") }}
+        <div class="input-group">
+            {{ form.password(class="form-control", placeholder="Please enter your password", id="password") }}
+            <div id="password-checkmark" class="input-group-append" style="display: none;">
+                <span class="input-group-text text-success">
+                    <i class="bi bi-check-circle"></i> <!-- Check icon from Bootstrap Icons -->
+                </span>
+            </div>
+        </div>
+        <div id="password-validation-message" class="mt-2 text-danger" style="display: none;"></div>
+        {% for error in form.password.errors %}
+            <div class="alert alert-danger mt-2">
+                <strong>{{ error }}</strong>
+            </div>
+        {% endfor %}
     </div>
 
     <!-- Confirm Password Input -->
     <div class="form-group">
-        <label for="confirmPassword">Confirm Password</label>
-        <input 
-            type="password" 
-            class="form-control"
-            id="confirmPassword" 
-            name="confirm_password" 
-            placeholder="Please confirm your password" 
-            required
-            aria-label="Confirm Password">
+        {{ form.confirm_password.label(class="form-label") }}
+        {{ form.confirm_password(class="form-control", placeholder="Please confirm your password") }}
+        {% for error in form.confirm_password.errors %}
+            <div class="alert alert-danger mt-2">
+                <strong>{{ error }}</strong>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- User Type: Radio Buttons for Admin or Regular User -->
+    <div class="form-group">
+        {{ form.user_type.label(class="form-label") }}<br>
+        {% for subfield in form.user_type %}
+            <div class="form-check">
+                {{ subfield(class="form-check-input") }}
+                <label class="form-check-label">{{ subfield.label.text }}</label>
+            </div>
+        {% endfor %}
+        {% for error in form.user_type.errors %}
+            <div class="alert alert-danger mt-2">
+                <strong>{{ error }}</strong>
+            </div>
+        {% endfor %}
     </div>
 
     <!-- Submit Button -->
-    <button type="submit" class="btn btn-primary">Sign Up</button>
+    <button type="submit" class="btn btn-primary btn-block">{{ form.submit.label }}</button>
 </form>
+
+<script>
+    // Get references to the password input field and the message container
+    const passwordField = document.getElementById('password');
+    const messageContainer = document.getElementById('password-validation-message');
+    const checkmarkContainer = document.getElementById('password-checkmark');
+
+    // Regex pattern for password validation (at least 8 characters, one letter, one number, and one special character)
+    const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    // Function to check the password validity
+    function checkPasswordValidity() {
+        const password = passwordField.value;
+
+        // Check if the password matches the required pattern
+        if (!passwordPattern.test(password)) {
+            messageContainer.style.display = 'block';
+            messageContainer.innerHTML = "Password must be at least 8 characters long, include at least one letter, one number, and one special character (e.g., @$!%*?&).";
+            checkmarkContainer.style.display = 'none';  // Hide the checkmark
+        } else {
+            messageContainer.style.display = 'none';  // Hide the message if password is valid
+            checkmarkContainer.style.display = 'block';  // Show the checkmark
+        }
+    }
+
+    // Add an event listener to check validity while typing
+    passwordField.addEventListener('input', checkPasswordValidity);
+</script>
+
 {% endblock %}

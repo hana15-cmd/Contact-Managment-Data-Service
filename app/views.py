@@ -2,7 +2,7 @@ from flask import Blueprint, logging,render_template
 from flask import current_app
 from flask import Flask, g, render_template, request, redirect, url_for, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.models import add_dummy_contacts_data, add_entry, get_database
+from app.models import add_dummy_contacts_data, add_entry, admin_required, get_database
 from flask import render_template, request, redirect, url_for, flash
 import sqlite3 as sql
 import logging
@@ -14,6 +14,7 @@ logging.basicConfig(level=logging.DEBUG)
 @views.route('/')
 def home():
     return render_template("homepage.html")
+
 
 @views.route('/init_db')
 def initialize_db():
@@ -144,14 +145,30 @@ def edit_team(id):
     return render_template('edit_team.html',datas=data)
 
 @views.route("/delete_team/<string:id>", methods=['GET'])
-def delete_teams(id):
-    con = sql.connect(current_app.config['DATABASE'])
-    cur = con.cursor()
-    cur.execute("DELETE FROM teams WHERE ID=?", (id,))  # Add a comma here to make it a tuple
-    con.commit()
-    con.close()  
-    flash('Team Deleted', 'warning')
+@admin_required
+def delete_team(id):
+    try:
+        con = sql.connect(current_app.config['DATABASE'])
+        cur = con.cursor()
+        cur.execute("DELETE FROM teams WHERE ID=?", (id,))
+        con.commit()
+        flash('Team deleted successfully!', 'warning')
+    except Exception as e:
+        flash(f"An error occurred while deleting the team: {str(e)}", 'danger')
+    finally:
+        con.close()
+
     return redirect(url_for("views.contacts"))
+
+# @views.route("/delete_team/<string:id>", methods=['GET'])
+# def delete_teams(id):
+#     con = sql.connect(current_app.config['DATABASE'])
+#     cur = con.cursor()
+#     cur.execute("DELETE FROM teams WHERE ID=?", (id,))  # Add a comma here to make it a tuple
+#     con.commit()
+#     con.close()  
+#     flash('Team Deleted', 'warning')
+#     return redirect(url_for("views.contacts"))
 
 @views.route("/see_team_members/<string:id>", methods=['POST', 'GET'])
 def see_team_members(id):
@@ -292,3 +309,10 @@ def delete_team_member(member_id):
 
     flash('Team member deleted successfully!', 'danger')
     return redirect(url_for('views.see_team_members', id=member['team_id']))
+
+# @views.route('/logout')
+# def logout():
+#     session.pop('user_id', None)
+#     session.pop('user_name', None)
+#     flash('You were successfully logged out')
+#     return redirect(url_for('views.login'))

@@ -1,6 +1,7 @@
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import current_app, g
+from flask import current_app, flash, g, redirect, session, url_for
+from functools import wraps
 
 def connection_database():
     connection = sqlite3.connect(current_app.config['DATABASE'])
@@ -21,16 +22,27 @@ def init_db_scheme():
         add_dummy_contacts_data()
         database.commit()
 
-    
-def add_entry(email, first_name, password):
-    database = get_database()
+def add_entry(email, first_name, password, is_admin=False):
     hashed_password = generate_password_hash(password)
+    database = get_database()
     database.execute(
-        "INSERT INTO users (email, first_name, password) VALUES (?, ?, ?)",
-        (email, first_name, hashed_password)
+        """
+        INSERT INTO users (email, first_name, password, is_admin)
+        VALUES (?, ?, ?, ?)
+        """,
+        (email, first_name, hashed_password, is_admin)
     )
     database.commit()
 
+    
+# def add_entry(email, first_name, password, is_admin=0):
+#     database = get_database()
+#     hashed_password = generate_password_hash(password)
+#     database.execute(
+#         "INSERT INTO users (email, first_name, password, is_admin) VALUES (?, ?, ?, ?)",
+#         (email, first_name, hashed_password, is_admin),
+#     )
+#     database.commit()
 
 def add_dummy_teams_data():
     database = get_database()
@@ -77,3 +89,13 @@ def add_dummy_contacts_data():
         print("Dummy data successfully added to contacts!")
     except sqlite3.Error as e:
         print(f"Error adding dummy contacts data: {e}")
+    
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('is_admin'):
+            flash('Admin privileges required.', 'danger')
+            return redirect(url_for("views.contacts"))
+        return f(*args, **kwargs)
+    return decorated_function

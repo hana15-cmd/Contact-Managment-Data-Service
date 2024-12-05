@@ -3,9 +3,12 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE NOT NULL,
     first_name TEXT NOT NULL,
     password TEXT NOT NULL
-    -- is_admin INTEGER DEFAULT 0 -- 0 is false, 1 is true
+    role TEXT 
 
 );
+
+ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0;
+
 
 CREATE TABLE IF NOT EXISTS teams (
     ID INTEGER PRIMARY KEY AUTOINCREMENT,     
@@ -26,6 +29,7 @@ CREATE TABLE IF NOT EXISTS teams (
 -- );
 
 DROP TABLE IF EXISTS contacts;
+
 
 CREATE TABLE contacts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
