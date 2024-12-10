@@ -23,26 +23,34 @@ def init_db_scheme():
         database.commit()
 
 def add_entry(email, first_name, password, is_admin=False):
-    hashed_password = generate_password_hash(password)
+    # Check if the email already exists
     database = get_database()
-    database.execute(
-        """
-        INSERT INTO users (email, first_name, password, is_admin)
-        VALUES (?, ?, ?, ?)
-        """,
-        (email, first_name, hashed_password, is_admin)
-    )
-    database.commit()
+    existing_user = database.execute(
+        "SELECT id FROM users WHERE email = ?", (email,)
+    ).fetchone()
 
+    if existing_user:
+        flash("Email is already taken, please use a different one.", "danger")
+        return redirect(url_for('auth.signup'))  # Assuming you have a signup route
+
+    # If email is not found, proceed with inserting the new user
+    hashed_password = generate_password_hash(password)
+    try:
+        database.execute(
+            """
+            INSERT INTO users (email, first_name, password, is_admin)
+            VALUES (?, ?, ?, ?)
+            """,
+            (email, first_name, hashed_password, is_admin)
+        )
+        database.commit()
+        flash("User created successfully!", "success")
+        return redirect(url_for('auth.login'))  # Assuming you want to redirect to login
     
-# def add_entry(email, first_name, password, is_admin=0):
-#     database = get_database()
-#     hashed_password = generate_password_hash(password)
-#     database.execute(
-#         "INSERT INTO users (email, first_name, password, is_admin) VALUES (?, ?, ?, ?)",
-#         (email, first_name, hashed_password, is_admin),
-#     )
-#     database.commit()
+    except sqlite3.IntegrityError as e:
+        # Handle specific IntegrityError if any
+        flash("An error occurred while creating the user.", "danger")
+        return redirect(url_for('auth.signup'))
 
 def add_dummy_teams_data():
     database = get_database()
@@ -52,19 +60,19 @@ def add_dummy_teams_data():
         database.execute("""
             INSERT INTO teams (team_name, team_location, number_of_team_members, email_address, phone_number)
             VALUES
-                ('Rover', 'Pune', 7, 'rover@teams.com', '57585858'),
-                ('Grogu', 'London', 10, 'grogu@teams.com', '2345678902'),
-                ('Galaxy', 'Rome', 10, 'galaxy@teams.com', '9754212567'),
-                ('Stars', 'Barcelona', 8, 'stars@teams.com', '33333333'),
-                ('Moon', 'London', 7, 'moon@teams.com', '67575744'),
-                ('Saturn', 'Bangalore', 10, 'saturn@teams.com', '5555555'),
-                ('Midnight', 'Pune', 8, 'midnight@teams.com', '666688688'),
-                ('Twilight', 'Manchester', 8, 'twilight@teams.com', '999787564'),
-                ('Yoda', 'Tokyo', 8, 'yoda@teams.com', '4444444446'),
-                ('Gravity', 'Bangalore', 10, 'gravity@teams.com', '555555421445'),
-                ('Solar', 'Pune', 8, 'solar@teams.com', '44242424'),
-                ('Infinity', 'Manchester', 8, 'infinity@teams.com', '74627428'),
-                ('Beyond', 'Tokyo', 8, 'beyond@teams.com', '1111333312');
+            ('Rover', 'Pune', 7, 'rover@teams.com', '+917585858585'),  
+            ('Grogu', 'London', 10, 'grogu@teams.com', '+447234567890'),  
+            ('Galaxy', 'Rome', 10, 'galaxy@teams.com', '+393975421256'),  
+            ('Stars', 'Barcelona', 8, 'stars@teams.com', '+34633333333'), 
+            ('Moon', 'London', 7, 'moon@teams.com', '+447675757444'),  
+            ('Saturn', 'Bangalore', 10, 'saturn@teams.com', '+915555555555'), 
+            ('Midnight', 'Pune', 8, 'midnight@teams.com', '+917666688688'),  
+            ('Twilight', 'Manchester', 8, 'twilight@teams.com', '+447999787564'), 
+            ('Yoda', 'Barcelona', 8, 'yoda@teams.com', '+34785832244'), 
+            ('Gravity', 'Bangalore', 10, 'gravity@teams.com', '+915555421445'),  
+            ('Solar', 'Pune', 8, 'solar@teams.com', '+917442424242'),
+            ('Infinity', 'Manchester', 8, 'infinity@teams.com', '+447746274282'),
+            ('Beyond', 'London', 8, 'beyond@teams.com', '+4455678906');
         """)
         database.commit()
         print("Dummy data successfully added to teams!")
@@ -79,7 +87,7 @@ def add_dummy_contacts_data():
 
         # Insert dummy data with correct team_id values
         database.execute("""
-            INSERT INTO contacts (NAME, EMAIL_ADDRESS, PHONE_NUMBER, TEAM_ID)
+            INSERT INTO contacts (EMPLOYEE_NAME, EMAIL_ADDRESS, PHONE_NUMBER, TEAM_ID)
             VALUES
                 ('John Doe', 'john.doe@teams.com', '1234567890', 37),
                 ('Jane Smith', 'jane.smith@teams.com', '9876543210', 296),

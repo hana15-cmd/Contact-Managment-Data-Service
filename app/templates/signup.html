@@ -49,6 +49,12 @@
                     <i class="bi bi-eye-slash"></i>
                 </button>
             </div>
+            <ul id="password-requirements" class="text-muted mt-2" style="font-size: 0.9em;">
+                <li id="require-length">At least 8 characters</li>
+                <li id="require-letter">At least one letter</li>
+                <li id="require-number">At least one number</li>
+                <li id="require-special">At least one special character (@, $, !, %, *, ?, &)</li>
+            </ul>
             <div id="password-validation-message" class="mt-2 text-danger" style="display: none;"></div>
         </div>
 
@@ -63,10 +69,8 @@
         <!-- Confirm Password Input -->
         <div class="form-group mb-3">
             {{ form.confirm_password.label(class="form-label") }}
-            {{ form.confirm_password(class="form-control", placeholder="Confirm your password") }}
-            {% for error in form.confirm_password.errors %}
-                <div class="alert alert-danger mt-2">{{ error }}</div>
-            {% endfor %}
+            {{ form.confirm_password(class="form-control", placeholder="Confirm your password", id="confirm-password") }}
+            <div id="confirm-password-error" class="text-danger mt-2" style="display: none;">Passwords do not match.</div>
         </div>
 
         <!-- User Type: Radio Buttons for Admin or Regular User -->
@@ -89,56 +93,90 @@
 </div>
 
 <script>
-    // Password validation and strength calculation logic
-    const passwordField = document.getElementById('password');
-    const passwordStrengthBar = document.getElementById('password-strength');
-    const messageContainer = document.getElementById('password-validation-message');
-    const togglePasswordButton = document.getElementById('toggle-password');
+    document.addEventListener('DOMContentLoaded', () => {
+        const passwordField = document.getElementById('password');
+        const confirmPasswordField = document.getElementById('confirm-password');
+        const requirements = {
+            length: document.getElementById('require-length'),
+            letter: document.getElementById('require-letter'),
+            number: document.getElementById('require-number'),
+            special: document.getElementById('require-special')
+        };
+        const confirmPasswordError = document.getElementById('confirm-password-error');
+        const passwordStrengthBar = document.getElementById('password-strength');
+        const messageContainer = document.getElementById('password-validation-message');
 
-    const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        const regexRules = {
+            length: /.{8,}/,
+            letter: /[A-Za-z]/,
+            number: /\d/,
+            special: /[@$!%*?&]/
+        };
 
-    // Password strength calculation
-    function calculatePasswordStrength(password) {
-        let score = 0;
-        if (password.length >= 8) score += 25;
-        if (/[A-Z]/.test(password)) score += 25;
-        if (/\d/.test(password)) score += 25;
-        if (/[@$!%*?&]/.test(password)) score += 25;
-        return score;
-    }
+        passwordField.addEventListener('input', () => {
+            const password = passwordField.value;
+            validatePassword(password, requirements);
+            updatePasswordStrength(password);
+            checkPasswordMatch(password, confirmPasswordField.value, confirmPasswordError);
+        });
 
-    // Toggle password visibility
-    togglePasswordButton.addEventListener('click', () => {
-        const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordField.setAttribute('type', type);
-        togglePasswordButton.innerHTML = type === 'password'
-            ? '<i class="bi bi-eye-slash"></i>'
-            : '<i class="bi bi-eye"></i>';
-    });
+        confirmPasswordField.addEventListener('input', () => {
+            checkPasswordMatch(passwordField.value, confirmPasswordField.value, confirmPasswordError);
+        });
 
-    // Validate and update password strength
-    passwordField.addEventListener('input', () => {
-        const password = passwordField.value;
-        const strength = calculatePasswordStrength(password);
-
-        passwordStrengthBar.style.width = strength + "%";
-        passwordStrengthBar.setAttribute('aria-valuenow', strength);
-
-        if (!passwordPattern.test(password)) {
-            messageContainer.style.display = 'block';
-            messageContainer.textContent = "Password must include at least 8 characters, a letter, a number, and a special character.";
-        } else {
-            messageContainer.style.display = 'none';
+        function validatePassword(password, reqElements) {
+            Object.keys(regexRules).forEach(key => {
+                if (regexRules[key].test(password)) {
+                    reqElements[key].classList.remove('text-muted');
+                    reqElements[key].classList.add('text-success');
+                } else {
+                    reqElements[key].classList.remove('text-success');
+                    reqElements[key].classList.add('text-muted');
+                }
+            });
         }
 
-        passwordStrengthBar.className = "progress-bar";
-        if (strength < 50) {
-            passwordStrengthBar.classList.add("bg-danger");
-        } else if (strength < 75) {
-            passwordStrengthBar.classList.add("bg-warning");
-        } else {
-            passwordStrengthBar.classList.add("bg-success");
+        function updatePasswordStrength(password) {
+            const strength = calculatePasswordStrength(password);
+            passwordStrengthBar.style.width = strength + "%";
+            passwordStrengthBar.setAttribute('aria-valuenow', strength);
+
+            passwordStrengthBar.className = "progress-bar";
+            if (strength < 50) {
+                passwordStrengthBar.classList.add("bg-danger");
+            } else if (strength < 75) {
+                passwordStrengthBar.classList.add("bg-warning");
+            } else {
+                passwordStrengthBar.classList.add("bg-success");
+            }
         }
+
+        function calculatePasswordStrength(password) {
+            let score = 0;
+            if (password.length >= 8) score += 25;
+            if (/[A-Z]/.test(password)) score += 25;
+            if (/\d/.test(password)) score += 25;
+            if (/[@$!%*?&]/.test(password)) score += 25;
+            return score;
+        }
+
+        function checkPasswordMatch(password, confirmPassword, errorElement) {
+            if (password !== confirmPassword) {
+                errorElement.style.display = 'block';
+            } else {
+                errorElement.style.display = 'none';
+            }
+        }
+
+        const togglePasswordButton = document.getElementById('toggle-password');
+        togglePasswordButton.addEventListener('click', () => {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            togglePasswordButton.innerHTML = type === 'password'
+                ? '<i class="bi bi-eye-slash"></i>'
+                : '<i class="bi bi-eye"></i>';
+        });
     });
 </script>
+
 {% endblock %}

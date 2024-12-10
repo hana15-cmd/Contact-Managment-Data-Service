@@ -1,7 +1,9 @@
 from flask import Blueprint, logging,render_template
 from flask import current_app
 from flask import Flask, g, render_template, request, redirect, url_for, session, flash
+from flask_login import login_required
 from werkzeug.security import generate_password_hash, check_password_hash
+from app.forms import AddTeamForm
 from app.models import add_dummy_contacts_data, add_entry, admin_required, get_database
 from flask import render_template, request, redirect, url_for, flash
 import sqlite3 as sql
@@ -69,29 +71,19 @@ def contacts():
     # Return the template with the filtered data and search information
     return render_template("index.html", datas=data, search_query=search_query, filter_column=filter_column)
 
-
 @views.route("/add_team", methods=['POST', 'GET'])
+@login_required
 def add_team():
-    if request.method == 'POST':
-        team_name = request.form.get('team_name')
-        team_location = request.form.get('team_location')
-        number_of_team_members = request.form.get('number_of_team_members')
-        team_email_address = request.form.get('team_email_address')
-        team_phone_number = request.form.get('team_phone_number')
+    form = AddTeamForm()
 
-        if not all([team_name, team_location, number_of_team_members, team_email_address, team_phone_number]):
-            flash('All fields are required!', category='error')
-            return redirect(url_for('views.add_team'))
+    if form.validate_on_submit():
+        # All fields are validated by WTForms
+        team_name = form.team_name.data
+        team_location = form.team_location.data
+        number_of_team_members = form.number_of_team_members.data
+        team_email_address = form.team_email_address.data
+        team_phone_number = form.team_phone_number.data
 
-        try:
-            number_of_team_members = int(number_of_team_members)
-        except ValueError:
-            flash('Invalid input for number of team members!', category='error')
-            return redirect(url_for('views.add_team'))
-
-        if not team_phone_number.isdigit():
-            flash('Invalid phone number! Please ensure it contains only digits.', category='error')
-            return redirect(url_for('views.add_team'))
         try:
             con = sql.connect(current_app.config['DATABASE'])
             cur = con.cursor()
@@ -105,21 +97,20 @@ def add_team():
                 (team_name, team_location, number_of_team_members, team_email_address, team_phone_number)
             )
             con.commit()
-            cur.execute("SELECT * FROM teams")
-            print("Database contents:", cur.fetchall())
 
             flash('Team added successfully!', category='success')
+            return redirect(url_for("views.contacts"))
+
         except Exception as e:
             flash(f'Error occurred while adding the team: {str(e)}', category='error')
         finally:
             con.close()
 
-        return redirect(url_for("views.contacts"))
-
-    return render_template('add_team.html')
+    return render_template('add_team.html', form=form)
 
 
 @views.route("/edit_team/<string:id>",methods=['POST','GET'])
+@login_required
 def edit_team(id):
     if request.method=='POST':
         team_name=request.form['teamName']
@@ -160,17 +151,8 @@ def delete_team(id):
 
     return redirect(url_for("views.contacts"))
 
-# @views.route("/delete_team/<string:id>", methods=['GET'])
-# def delete_teams(id):
-#     con = sql.connect(current_app.config['DATABASE'])
-#     cur = con.cursor()
-#     cur.execute("DELETE FROM teams WHERE ID=?", (id,))  # Add a comma here to make it a tuple
-#     con.commit()
-#     con.close()  
-#     flash('Team Deleted', 'warning')
-#     return redirect(url_for("views.contacts"))
-
 @views.route("/see_team_members/<string:id>", methods=['POST', 'GET'])
+@login_required
 def see_team_members(id):
     logging.debug(f"Team ID received: {id}")
 
@@ -217,6 +199,7 @@ def see_team_members(id):
             con.close()
 
 @views.route("/add_team_member/<int:team_id>", methods=['POST', 'GET'])
+@login_required
 def add_team_member(team_id):
     # Fetch team data for the dropdown (if necessary)
     con = sql.connect(current_app.config['DATABASE'])
@@ -264,6 +247,7 @@ def add_team_member(team_id):
     return render_template('add_employee.html', teams=teams, team_id=team_id)
 
 @views.route("/edit_team_member/<int:member_id>", methods=['GET', 'POST'])
+@login_required
 def edit_team_member(member_id):
     con = sql.connect(current_app.config['DATABASE'])
     con.row_factory = sql.Row
@@ -294,6 +278,7 @@ def edit_team_member(member_id):
     return render_template('edit_employee.html', member=member)
 
 @views.route("/delete_team_member/<int:member_id>", methods=['GET'])
+@login_required
 def delete_team_member(member_id):
     # Fetch the team member by ID
     con = sql.connect(current_app.config['DATABASE'])
