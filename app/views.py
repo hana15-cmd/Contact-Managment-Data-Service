@@ -2,12 +2,12 @@ from flask import Blueprint, logging,render_template
 from flask import current_app
 from flask import Flask, g, render_template, request, redirect, url_for, session, flash
 from flask_login import login_required
-from werkzeug.security import generate_password_hash, check_password_hash
-from app.forms import AddTeamForm
-from app.models import add_dummy_contacts_data, add_entry, admin_required, get_database
+from app.forms import AddTeamForm, AddTeamMemberForm, EditTeamForm
+from app.database_logic.models import add_dummy_contacts_data, add_entry, admin_required, get_database
 from flask import render_template, request, redirect, url_for, flash
 import sqlite3 as sql
 import logging
+from .forms import EditTeamMemberForm
 
 views = Blueprint('views',__name__)
 
@@ -22,7 +22,7 @@ def home():
 def initialize_db():
     try:
         print("Initializing the database...")
-        from app.models import init_db_scheme, add_dummy_teams_data, add_dummy_contacts_data
+        from app.database_logic.models import init_db_scheme, add_dummy_teams_data, add_dummy_contacts_data
 
         init_db_scheme()  # Set up the database schema
         add_dummy_teams_data()  # Populate with dummy teams data
@@ -46,7 +46,15 @@ def contacts():
     cursor = database.cursor()
 
     # Start with the base SQL query
-    sql_query = "SELECT * FROM teams"
+    sql_query = """
+    SELECT 
+        t.ID, 
+        t.TEAM_NAME, 
+        t.TEAM_LOCATION, 
+        t.EMAIL_ADDRESS, 
+        (SELECT COUNT(*) FROM contacts c WHERE c.team_id = t.ID) AS NUMBER_OF_TEAM_MEMBERS
+    FROM teams t
+    """
     sql_params = []
 
     # Modify the query based on user input
@@ -82,7 +90,6 @@ def add_team():
         team_location = form.team_location.data
         number_of_team_members = form.number_of_team_members.data
         team_email_address = form.team_email_address.data
-        team_phone_number = form.team_phone_number.data
 
         try:
             con = sql.connect(current_app.config['DATABASE'])
@@ -91,10 +98,10 @@ def add_team():
             # Insert data into the database
             cur.execute(
                 """
-                INSERT INTO teams (TEAM_NAME, TEAM_LOCATION, NUMBER_OF_TEAM_MEMBERS, EMAIL_ADDRESS, PHONE_NUMBER)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO teams (TEAM_NAME, TEAM_LOCATION, NUMBER_OF_TEAM_MEMBERS, EMAIL_ADDRESS)
+                VALUES (?, ?, ?, ?)
                 """,
-                (team_name, team_location, number_of_team_members, team_email_address, team_phone_number)
+                (team_name, team_location, number_of_team_members, team_email_address)
             )
             con.commit()
 
@@ -106,34 +113,68 @@ def add_team():
         finally:
             con.close()
 
-    return render_template('add_team.html', form=form)
+    return render_template('team_table/add_team.html', form=form)
 
 
-@views.route("/edit_team/<string:id>",methods=['POST','GET'])
+@views.route("/edit_team/<string:id>", methods=['POST', 'GET'])
 @login_required
 def edit_team(id):
-    if request.method=='POST':
-        team_name=request.form['teamName']
-        team_location=request.form['teamLocation']
-        number_of_team_members=request.form['numberOfTeamMembers']
-        team_email_address=request.form['EmailAddress']
-        team_phone_number=request.form['PhoneNumber']
-        con = sql.connect(current_app.config['DATABASE'])
-        cur=con.cursor()
-        cur.execute("""
-            UPDATE teams 
-            SET TEAM_NAME=?, TEAM_LOCATION=?, NUMBER_OF_TEAM_MEMBERS=?, EMAIL_ADDRESS=?, PHONE_NUMBER=? 
-            WHERE id=?
-        """, (team_name, team_location, number_of_team_members, team_email_address, team_phone_number, id))
-        con.commit()
-        flash('Team Updated','success')
-        return redirect(url_for("views.contacts"))
+    # Initialize the connection to the database
     con = sql.connect(current_app.config['DATABASE'])
-    con.row_factory=sql.Row
-    cur=con.cursor()
-    cur.execute("SELECT * FROM teams where ID=?",(id,))
-    data=cur.fetchone()
-    return render_template('edit_team.html',datas=data)
+    con.row_factory = sql.Row
+    cur = con.cursor()
+
+    # Fetch the team data for the specified ID
+    cur.execute("SELECT * FROM teams WHERE ID=?", (id,))
+    data = cur.fetchone()
+
+    if not data:
+        flash("Team not found!", "danger")
+        return redirect(url_for("views.contacts"))
+
+    # Create an instance of the EditTeamForm
+    form = EditTeamForm()
+
+    # Set the current team ID for validation purposes
+    form.set_team_id(id)
+
+    # Pre-fill the form with existing team data (GET request)
+    if request.method == 'GET':
+        form.team_name.data = data['TEAM_NAME']
+        form.team_location.data = data['TEAM_LOCATION']
+        form.number_of_team_members.data = data['NUMBER_OF_TEAM_MEMBERS']
+        form.team_email_address.data = data['EMAIL_ADDRESS']
+    
+
+    # Handle form submission (POST request)
+    if request.method == 'POST' and form.validate_on_submit():
+        # If the form is valid, update the team data in the database
+        team_name = form.team_name.data
+        team_location = form.team_location.data
+        number_of_team_members = form.number_of_team_members.data
+        team_email_address = form.team_email_address.data
+
+        try:
+            # Update the team data in the database
+            cur.execute("""
+                UPDATE teams 
+                SET TEAM_NAME=?, TEAM_LOCATION=?, NUMBER_OF_TEAM_MEMBERS=?, EMAIL_ADDRESS=? 
+                WHERE ID=?
+            """, (team_name, team_location, number_of_team_members, team_email_address, id))
+            con.commit()
+
+            # Flash success message and redirect to the contacts page
+            flash('Team Updated Successfully', 'success')
+            return redirect(url_for("views.contacts"))
+        except Exception as e:
+            # Flash error message if something goes wrong with the database operation
+            flash(f"An error occurred while updating the team: {e}", 'danger')
+        finally:
+            con.close()
+
+    # If the form is not valid, or if it's a GET request, render the template with the form
+    return render_template('team_table/edit_team.html', form=form, datas=data)
+
 
 @views.route("/delete_team/<string:id>", methods=['GET'])
 @admin_required
@@ -186,10 +227,18 @@ def see_team_members(id):
 
         if not members:
             logging.info(f"No members found for team ID {id}")
-            flash("No members found for this team.", "info")
+            flash("No members found for this team. Adding dummy members for testing.", "info")
+
+            # Call the add_dummy_contacts_data function to insert dummy data
+            add_dummy_contacts_data()
+
+            # Refresh the members list after inserting dummy data
+            cur.execute("SELECT * FROM contacts WHERE team_id=?", (id,))
+            members = cur.fetchall()
+            logging.debug(f"Members fetched after adding dummy data: {members}")
 
         # Render the template with team and member details
-        return render_template("team_member_info.html", team=team, members=members)
+        return render_template("employee_table/team_member_info.html", team=team, members=members)
     except Exception as e:
         logging.error(f"Error fetching team or members: {e}")
         flash("An unexpected error occurred. Please try again later.", "danger")
@@ -201,7 +250,9 @@ def see_team_members(id):
 @views.route("/add_team_member/<int:team_id>", methods=['POST', 'GET'])
 @login_required
 def add_team_member(team_id):
-    # Fetch team data for the dropdown (if necessary)
+    form = AddTeamMemberForm()
+
+    # Fetch teams to populate the select field
     con = sql.connect(current_app.config['DATABASE'])
     con.row_factory = sql.Row
     cur = con.cursor()
@@ -209,19 +260,11 @@ def add_team_member(team_id):
     teams = cur.fetchall()
     con.close()
 
-    # Handle form submission (POST request)
-    if request.method == 'POST':
-        # Get form data
-        employee_name = request.form.get('employee_name')
-        email_address = request.form.get('email_address')
-        phone_number = request.form.get('phone_number')
+    # Populate the team select field choices
+    form.team_id.choices = [(team['id'], team['team_name']) for team in teams]
 
-        # Check if all fields are provided
-        if not all([employee_name, email_address, phone_number]):
-            flash('All fields are required!', category='error')
-            return redirect(url_for('views.add_team_member', team_id=team_id))  # Redirect back to the same page
-
-        # Insert the new team member into the database
+    # If the form is valid, save the team member to the database
+    if form.validate_on_submit():
         try:
             con = sql.connect(current_app.config['DATABASE'])
             cur = con.cursor()
@@ -230,7 +273,7 @@ def add_team_member(team_id):
                 INSERT INTO contacts (employee_name, email_address, phone_number, team_id)
                 VALUES (?, ?, ?, ?)
                 """,
-                (employee_name, email_address, phone_number, team_id)
+                (form.employee_name.data, form.email_address.data, form.phone_number.data, form.team_id.data)
             )
             con.commit()
             flash('Team member added successfully!', category='success')
@@ -243,12 +286,14 @@ def add_team_member(team_id):
 
         return redirect(url_for('views.see_team_members', id=team_id))  # Redirect to the team's member list page
 
-    # If it's a GET request, render the form
-    return render_template('add_employee.html', teams=teams, team_id=team_id)
+    # Render the form if it's a GET request
+    return render_template('employee_table/add_employee.html', form=form, team_id=team_id)
+
 
 @views.route("/edit_team_member/<int:member_id>", methods=['GET', 'POST'])
 @login_required
 def edit_team_member(member_id):
+    # Fetch team member data from the database
     con = sql.connect(current_app.config['DATABASE'])
     con.row_factory = sql.Row
     cur = con.cursor()
@@ -256,29 +301,56 @@ def edit_team_member(member_id):
     member = cur.fetchone()
     con.close()
 
-    if request.method == 'POST':
-        employee_name = request.form['employee_name']
-        email_address = request.form['email_address']
-        phone_number = request.form['phone_number']
+    # If the member doesn't exist, redirect to an error page or previous page
+    if not member:
+        flash('Team member not found!', 'danger')
+        return redirect(url_for('views.contacts'))
 
-        # Update the member in the database
+    # Create the form
+    form = EditTeamMemberForm()
+
+    # Populate team_id select field with team options
+    con = sql.connect(current_app.config['DATABASE'])
+    con.row_factory = sql.Row
+    cur = con.cursor()
+    cur.execute("SELECT id, team_name FROM teams")  # Assuming you have a teams table
+    teams = cur.fetchall()
+    con.close()
+
+    form.team_id.choices = [(team['id'], team['team_name']) for team in teams]
+
+    # Pre-fill the form with existing member data
+    if request.method == 'GET':
+        form.employee_name.data = member['employee_name']
+        form.email_address.data = member['email_address']
+        form.phone_number.data = member['phone_number']
+        form.team_id.data = member['team_id']
+
+    if request.method == 'POST' and form.validate_on_submit():
+        # If the form is valid, update the member's data
+        employee_name = form.employee_name.data
+        email_address = form.email_address.data
+        phone_number = form.phone_number.data
+        team_id = form.team_id.data
+
+        # Update member data in the database
         con = sql.connect(current_app.config['DATABASE'])
         cur = con.cursor()
         cur.execute("""
             UPDATE contacts
-            SET employee_name = ?, email_address = ?, phone_number = ?
+            SET employee_name = ?, email_address = ?, phone_number = ?, team_id = ?
             WHERE id = ?
-        """, (employee_name, email_address, phone_number, member_id))
+        """, (employee_name, email_address, phone_number, team_id, member_id))
         con.commit()
         con.close()
 
         flash('Team member updated successfully!', 'success')
-        return redirect(url_for('views.see_team_members', id=member['team_id']))  # Using 'id' to pass the team_id
+        return redirect(url_for('views.see_team_members', id=team_id))  # Redirect to the team members page
 
-    return render_template('edit_employee.html', member=member)
+    return render_template('employee_table/edit_employee.html', form=form, member=member)
 
 @views.route("/delete_team_member/<int:member_id>", methods=['GET'])
-@login_required
+@admin_required
 def delete_team_member(member_id):
     # Fetch the team member by ID
     con = sql.connect(current_app.config['DATABASE'])
@@ -294,10 +366,3 @@ def delete_team_member(member_id):
 
     flash('Team member deleted successfully!', 'danger')
     return redirect(url_for('views.see_team_members', id=member['team_id']))
-
-# @views.route('/logout')
-# def logout():
-#     session.pop('user_id', None)
-#     session.pop('user_name', None)
-#     flash('You were successfully logged out')
-#     return redirect(url_for('views.login'))

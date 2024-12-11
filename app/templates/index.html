@@ -37,6 +37,7 @@
 </div>
 
 <!-- Team Table -->
+<!-- Team Table -->
 <table class='table table-bordered table-hover'>
   <thead class="thead-light">
     <tr>
@@ -45,7 +46,6 @@
       <th>Team Location</th>
       <th>Number Of Team Members</th>
       <th>Email Address</th>
-      <th>Phone Number</th>
       <th>View Members</th>
       <th>Edit</th>
       <th>Delete</th>
@@ -59,7 +59,6 @@
       <td>{{ row['TEAM_LOCATION'] }}</td>
       <td>{{ row['NUMBER_OF_TEAM_MEMBERS'] }}</td>
       <td>{{ row['EMAIL_ADDRESS'] }}</td>
-      <td>{{ row['PHONE_NUMBER'] }}</td>
       <td>
         {% if row.ID %}
         <a href="{{ url_for('views.see_team_members', id=row.ID) }}" class="btn btn-info">
@@ -93,11 +92,4 @@
   </tbody>
 </table>
 
-<!-- Debugging Section (for developers, can be removed in production)
-{% if datas %}
-<div class="alert alert-info mt-4">
-  <strong>Debug Info:</strong>
-  <pre>{{ datas | safe }}</pre>
-</div> -->
-{% endif %}
 {% endblock %}

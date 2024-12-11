@@ -1,6 +1,6 @@
 import re
 from flask_wtf import FlaskForm
-from wtforms import IntegerField, StringField, PasswordField, RadioField, SubmitField
+from wtforms import IntegerField, SelectField, StringField, PasswordField, RadioField, SubmitField
 from wtforms.validators import (
     DataRequired,
     Email,
@@ -10,14 +10,21 @@ from wtforms.validators import (
     NumberRange,
     Regexp
 )
-from app.models import get_database
+from app.database_logic.models import get_database
 
-# Utility function to check if an email is taken
-def is_email_taken(email):
-    """Check if the email is already registered in the database."""
+# Utility function to check if an email is taken (for both add and edit)
+def is_email_taken(email, exclude_team_id=None):
+    """Check if the email is already registered in the database, 
+    excluding a specific team_id if provided (for edit case).
+    """
     database = get_database()
-    user = database.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-    return user is not None
+    query = "SELECT * FROM teams WHERE EMAIL_ADDRESS = ?"
+    params = (email,)
+    if exclude_team_id:
+        query += " AND ID != ?"
+        params = (email, exclude_team_id)  # Use 'ID' instead of 'team_id'
+    team = database.execute(query, params).fetchone()
+    return team is not None
 
 # Custom Validators
 def validate_team_members(form, field):
@@ -97,9 +104,94 @@ class AddTeamForm(FlaskForm):
         Email(message="Please enter a valid email address."),
         validate_email_domain
     ])
-    team_phone_number = StringField('Team Phone Number', validators=[
+    # team_phone_number = StringField('Team Phone Number', validators=[
+    #     DataRequired(),
+    #     Length(max=20, message="Phone number must not exceed 20 characters."),
+    #     validate_phone_number
+    # ])
+    submit = SubmitField('Add Team')
+
+
+class EditTeamForm(FlaskForm):
+    """Form for editing an existing team."""
+    team_name = StringField('Team Name', validators=[
+        DataRequired(),
+        Length(min=3, max=100, message="Team name must be between 3 and 100 characters.")
+    ])
+    team_location = StringField('Team Location', validators=[
+        DataRequired(),
+        Length(min=3, max=100, message="Team location must be between 3 and 100 characters.")
+    ])
+    number_of_team_members = IntegerField('Number of Team Members', validators=[
+        DataRequired(),
+        validate_team_members
+    ])
+    team_email_address = StringField('Team Email Address', validators=[
+        DataRequired(),
+        Email(message="Please enter a valid email address."),
+        validate_email_domain
+    ])
+    # team_phone_number = StringField('Team Phone Number', validators=[
+    #     DataRequired(),
+    #     Length(max=20, message="Phone number must not exceed 20 characters."),
+    #     validate_phone_number
+    # ]) 
+    submit = SubmitField('Save Changes')
+
+    # Custom email validator (to handle edit scenario)
+    def validate_team_email_address(self, field):
+        """Ensure the email is unique and conforms to allowed domains, excluding the current team if editing."""
+        # Assuming `team_id` is passed into the form somehow
+        if is_email_taken(field.data, exclude_team_id=getattr(self, 'team_id', None)):
+            raise ValidationError("This email is already taken. Please choose a different email.")
+
+    # Method to set the `team_id` if this form is being used to edit an existing team
+    def set_team_id(self, team_id):
+        """Sets the team_id for the current form to exclude during email validation."""
+        self.team_id = team_id
+
+# Custom validator to ensure no numbers are in the employee name
+def validate_no_numbers(form, field):
+    """Ensure employee name does not contain numeric values."""
+    if any(char.isdigit() for char in field.data):
+        raise ValidationError("Employee name must not contain numeric values.")
+
+class AddTeamMemberForm(FlaskForm):
+    """Form for adding a team member."""
+    employee_name = StringField('Employee Name', validators=[
+        DataRequired(),
+        Length(min=3, max=100, message="Employee name must be between 3 and 100 characters."),
+        validate_no_numbers  # Add the custom validator here
+    ])
+    email_address = StringField('Employee Email Address', validators=[
+        DataRequired(),
+        Email(message="Please enter a valid email address."),
+        validate_email_domain
+    ])
+    phone_number = StringField('Phone Number', validators=[
         DataRequired(),
         Length(max=20, message="Phone number must not exceed 20 characters."),
         validate_phone_number
     ])
-    submit = SubmitField('Add Team')
+    team_id = SelectField('Team', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Add Employee')
+
+class EditTeamMemberForm(FlaskForm):
+    """Form for editing team member details."""
+    employee_name = StringField('Employee Name', validators=[
+        DataRequired(),
+        Length(min=3, max=100, message="Employee name must be between 3 and 100 characters."),
+        validate_no_numbers  # Custom validator for no numbers
+    ])
+    email_address = StringField('Employee Email Address', validators=[
+        DataRequired(),
+        Email(message="Please enter a valid email address."),
+        validate_email_domain  # Custom email domain validator
+    ])
+    phone_number = StringField('Phone Number', validators=[
+        DataRequired(),
+        Length(max=20, message="Phone number must not exceed 20 characters."),
+        validate_phone_number  # Custom phone number validator
+    ])
+    team_id = SelectField('Team', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Edit Employee')
