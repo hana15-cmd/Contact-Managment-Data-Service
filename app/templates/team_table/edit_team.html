@@ -1,0 +1,70 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <div class='row'>
+    <div class='col-5 mx-auto'>
+      <h3>Edit Team</h3><hr>
+      
+      <form method="POST" action="{{ url_for('views.edit_team', id=datas['ID']) }}">
+        {{ form.hidden_tag() }} <!-- CSRF token -->
+
+        <!-- Team Name -->
+        <div class="form-group">
+          <label for="team_name">Team Name</label>
+          {{ form.team_name(class="form-control") }}
+          {% if form.team_name.errors %}
+            <ul class="errors text-danger">
+              {% for error in form.team_name.errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+
+        <!-- Team Location -->
+        <div class="form-group">
+          <label for="team_location">Team Location</label>
+          {{ form.team_location(class="form-control") }}
+          {% if form.team_location.errors %}
+            <ul class="errors text-danger">
+              {% for error in form.team_location.errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+
+        <!-- Number of Team Members -->
+        <div class="form-group">
+          <label for="number_of_team_members">Number of Team Members</label>
+          {{ form.number_of_team_members(class="form-control") }}
+          {% if form.number_of_team_members.errors %}
+            <ul class="errors text-danger">
+              {% for error in form.number_of_team_members.errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+
+        <!-- Team Email Address -->
+        <div class="form-group">
+          <label for="team_email_address">Team Email Address</label>
+          {{ form.team_email_address(class="form-control") }}
+          {% if form.team_email_address.errors %}
+            <ul class="errors text-danger">
+              {% for error in form.team_email_address.errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+        
+        <!-- Submit Button -->
+        <div class="form-group">
+          {{ form.submit(class="btn btn-primary") }}
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

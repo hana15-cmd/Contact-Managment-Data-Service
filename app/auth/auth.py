@@ -3,9 +3,8 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from flask_login import login_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.forms import SignupForm, is_email_taken
-from app.models import add_entry, get_database
+from app.database_logic.models import add_entry, get_database
 from app.user_auth import User
-
 
 auth = Blueprint('auth',__name__)
 
@@ -32,7 +31,7 @@ def login():
         else:
             flash('Invalid username or password', category='error')
 
-    return render_template('login.html')
+    return render_template('auth/login.html')
 
 @auth.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -55,7 +54,7 @@ def signup():
             flash('User already exists. Please log in.', category='error')
             return redirect(url_for('auth.login'))
 
-    return render_template('signup.html', form=form)
+    return render_template('auth/signup.html', form=form)
 
 @auth.route('/logout')
 def logout():

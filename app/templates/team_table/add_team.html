@@ -58,15 +58,6 @@
             {% endfor %}
         </div>
 
-        <!-- Team Phone Number -->
-        <div class="form-group mb-3">
-            {{ form.team_phone_number.label(class="form-label") }}
-            {{ form.team_phone_number(class="form-control", placeholder="Enter the team phone number (e.g., +1234567890)") }}
-            {% for error in form.team_phone_number.errors %}
-                <div class="alert alert-danger mt-2">{{ error }}</div>
-            {% endfor %}
-        </div>
-
         <!-- Submit Button -->
         <button type="submit" class="btn btn-primary btn-block w-100">{{ form.submit.label }}</button>
     </form>

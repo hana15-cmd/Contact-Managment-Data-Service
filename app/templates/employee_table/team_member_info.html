@@ -7,7 +7,6 @@
     <h5 class="card-title">Team Details</h5>
     <p><strong>Location:</strong> {{ team['TEAM_LOCATION'] }}</p>
     <p><strong>Email:</strong> {{ team['EMAIL_ADDRESS'] }}</p>
-    <p><strong>Phone:</strong> {{ team['PHONE_NUMBER'] }}</p>
   </div>
 </div>
 
@@ -23,7 +22,7 @@
         <th>Employee Name</th>
         <th>Email</th>
         <th>Phone</th>
-        <th>Actions</th> <!-- New column for actions -->
+        <th>Actions</th> <!-- Column for actions -->
       </tr>
     </thead>
     <tbody>
@@ -34,18 +33,16 @@
           <td>{{ member['email_address'] }}</td>
           <td>{{ member['phone_number'] }}</td>
           <td>
-            <!-- Edit Button -->
-            <a href="{{ url_for('views.edit_team_member', member_id=member['id']) }}" class="btn btn-warning btn-sm">
-              <i class="bi bi-pencil-square"></i> Edit
+            <a href="{{ url_for('views.edit_team_member', member_id=member['id']) }}" class="btn btn-primary">
+              <i class="fas fa-edit"></i> Edit
             </a>
-            <!-- Delete Button
             {% if session.get('is_admin') %}
-            <a href="{{ url_for('views.delete_team', id=team['id']) }}" class="btn btn-danger">Delete</a>
-        {% endif %} -->
-        
-            <a href="{{ url_for('views.delete_team_member', member_id=member['id']) }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this member?');">
-              <i class="bi bi-trash"></i> Delete
-            </a>
+              <a href="{{ url_for('views.delete_team_member', member_id=member['id']) }}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this team member?')">
+                <i class="fas fa-trash"></i> Delete
+              </a>
+            {% else %}
+              <span class="text-muted">Delete Disabled</span>
+            {% endif %}
           </td>
         </tr>
       {% endfor %}
