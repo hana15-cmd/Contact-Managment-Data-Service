@@ -2,6 +2,7 @@ from flask import current_app
 from flask_login import UserMixin
 import sqlite3 as sql
 
+
 class User(UserMixin):
     def __init__(self, id, email, password, first_name, is_admin):
         self.id = id
@@ -23,7 +24,8 @@ class User(UserMixin):
         con.close()
         if user_data:
             # Include additional fields if needed (like first_name, is_admin)
-            return User(user_data['id'], user_data['email'], user_data['password'], user_data['first_name'], user_data['is_admin'])
+            return User(user_data['id'], user_data['email'], user_data['password'], user_data['first_name'],
+                        user_data['is_admin'])
         return None
 
     @staticmethod
@@ -36,5 +38,6 @@ class User(UserMixin):
         con.close()
         if user_data:
             # Return user object with necessary fields
-            return User(user_data['id'], user_data['email'], user_data['password'], user_data['first_name'], user_data['is_admin'])
+            return User(user_data['id'], user_data['email'], user_data['password'], user_data['first_name'],
+                        user_data['is_admin'])
         return None

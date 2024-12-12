@@ -139,7 +139,6 @@ def add_dummy_contacts_data():
         print(f"Error adding dummy contacts data: {e}")
 
 
-
 # Ensure only admins can access certain views
 def admin_required(f):
     @wraps(f)
@@ -149,10 +148,3 @@ def admin_required(f):
             return redirect(url_for("views.contacts"))
         return f(*args, **kwargs)
     return decorated_function
-
-
-# Close the database connection after each request
-# @current_app.teardown_appcontext
-# def close_database_connection(exception=None):
-#     if hasattr(g, 'sqlite_database'):
-#         g.sqlite_database.close()
