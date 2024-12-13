@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Add Team{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h3 class="text-center mb-4">Add Team</h3>
+
+    <form method="POST" action="{{ url_for('views.add_team') }}">
+        <!-- CSRF Token -->
+        {{ form.hidden_tag() }}
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <strong>{{ message }}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+      
+        <!-- Team Name -->
+        <div class="form-group mb-3">
+            {{ form.team_name.label(class="form-label") }}
+            {{ form.team_name(class="form-control", placeholder="Enter the team name") }}
+            {% for error in form.team_name.errors %}
+                <div class="alert alert-danger mt-2">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Team Location -->
+        <div class="form-group mb-3">
+            {{ form.team_location.label(class="form-label") }}
+            {{ form.team_location(class="form-control", placeholder="Enter the team location") }}
+            {% for error in form.team_location.errors %}
+                <div class="alert alert-danger mt-2">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Number of Team Members -->
+        <div class="form-group mb-3">
+            {{ form.number_of_team_members.label(class="form-label") }}
+            {{ form.number_of_team_members(class="form-control", placeholder="Enter the number of team members") }}
+            {% for error in form.number_of_team_members.errors %}
+                <div class="alert alert-danger mt-2">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Team Email Address -->
+        <div class="form-group mb-3">
+            {{ form.team_email_address.label(class="form-label") }}
+            {{ form.team_email_address(class="form-control", placeholder="Enter the team email address (e.g., example@domain.com)") }}
+            {% for error in form.team_email_address.errors %}
+                <div class="alert alert-danger mt-2">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary btn-block w-100">{{ form.submit.label }}</button>
+    </form>
+</div>
+{% endblock %}

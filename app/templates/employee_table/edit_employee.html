@@ -1,0 +1,52 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <div class="row">
+    <div class="col-5 mx-auto">
+      <h3>Edit Team Member</h3><hr>
+      <form method="post" action="{{ url_for('views.edit_team_member', member_id=member['id']) }}">
+        <!-- Render CSRF Token -->
+        {{ form.hidden_tag() }}  <!-- Ensures CSRF token is included in the form -->
+
+        <!-- Employee Name -->
+        <div class="form-group">
+          <label for="employee_name">Employee Name</label>
+          {{ form.employee_name(class="form-control", value=member['employee_name']) }}
+          {% for error in form.employee_name.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Email Address -->
+        <div class="form-group">
+          <label for="email_address">Email Address</label>
+          {{ form.email_address(class="form-control", value=member['email_address']) }}
+          {% for error in form.email_address.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Phone Number -->
+        <div class="form-group">
+          <label for="phone_number">Phone Number</label>
+          {{ form.phone_number(class="form-control", value=member['phone_number']) }}
+          {% for error in form.phone_number.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Team Selection -->
+        <div class="form-group">
+          <label for="team_id">Team</label>
+          {{ form.team_id(class="form-control") }}
+          {% for error in form.team_id.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Submit Button -->
+        <input type="submit" value="Submit" class="btn btn-primary">
+      </form>
+    </div>
+  </div>
+{% endblock %}

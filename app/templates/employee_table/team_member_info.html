@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="text-center">Team: {{ team['TEAM_NAME'] }}</h1>
+<div class="card mt-3">
+  <div class="card-body">
+    <h5 class="card-title">Team Details</h5>
+    <p><strong>Location:</strong> {{ team['TEAM_LOCATION'] }}</p>
+    <p><strong>Email:</strong> {{ team['EMAIL_ADDRESS'] }}</p>
+  </div>
+</div>
+
+<h3 class="mt-4">Team Members</h3>
+<!-- Add Team Member Button with spacing -->
+<a href="{{ url_for('views.add_team_member', team_id=team['id']) }}" class="btn btn-success mt-4 mb-4">Add Team Member</a>
+
+{% if members %}
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Employee Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Actions</th> <!-- Column for actions -->
+      </tr>
+    </thead>
+    <tbody>
+      {% for member in members %}
+        <tr>
+          <td>{{ member['id'] }}</td>
+          <td>{{ member['employee_name'] }}</td>
+          <td>{{ member['email_address'] }}</td>
+          <td>{{ member['phone_number'] }}</td>
+          <td>
+            <a href="{{ url_for('views.edit_team_member', member_id=member['id']) }}" class="btn btn-primary">
+              <i class="fas fa-edit"></i> Edit
+            </a>
+            {% if session.get('is_admin') %}
+              <a href="{{ url_for('views.delete_team_member', member_id=member['id']) }}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this team member?')">
+                <i class="fas fa-trash"></i> Delete
+              </a>
+            {% else %}
+              <span class="text-muted">Delete Disabled</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="text-muted">No members found for this team.</p>
+{% endif %}
+
+<a href="{{ url_for('views.contacts') }}" class="btn btn-primary mt-3">Back to Teams</a>
+{% endblock %}
