@@ -1,4 +1,3 @@
-
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from flask_login import login_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -6,7 +5,7 @@ from app.forms import SignupForm, is_email_taken
 from app.database_logic.models import add_entry, get_database
 from app.user_auth import User
 
-auth = Blueprint('auth',__name__)
+auth = Blueprint('auth', __name__)
 
 @auth.route('/login/', methods=['GET', 'POST'])
 def login():
@@ -21,9 +20,10 @@ def login():
             # Log the user in using Flask-Login
             login_user(user)
 
-            # Store additional info in the session if needed (not necessary with Flask-Login)
-            session['user_name'] = user.first_name
-            session['is_admin'] = user.is_admin  # Store admin status in session if needed
+            # Store additional info in the session if needed
+            session['user_id'] = user.id
+            session['user_name'] = user.first_name  # Store the user's first name
+            session['is_admin'] = user.is_admin  # Store admin status in session
 
             flash('You were successfully logged in', category='success')
             return redirect(url_for('views.contacts'))  # Redirect to contacts or dashboard after login
@@ -56,11 +56,13 @@ def signup():
 
     return render_template('auth/signup.html', form=form)
 
-@auth.route('/logout')
+
+@auth.route('/logout', methods=['GET'])
 def logout():
+    # Clear session variables upon logout
     session.pop('user_id', None)
     session.pop('user_name', None)
-    flash('You were successfully logged out, ')
+    session.pop('is_admin', None)  # Remove admin info from session
+    
+    flash('You were successfully logged out', category='success')
     return redirect(url_for('auth.login'))
-
-

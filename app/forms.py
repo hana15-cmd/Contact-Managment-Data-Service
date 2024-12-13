@@ -88,11 +88,12 @@ class AddTeamForm(FlaskForm):
     """Form for adding a team."""
     team_name = StringField('Team Name', validators=[
         DataRequired(),
-        Length(min=3, max=100, message="Team name must be between 3 and 100 characters.")
+        Length(min=3, max=25, message="Team name must be between 3 and 25 characters.")
     ])
     team_location = StringField('Team Location', validators=[
         DataRequired(),
-        Length(min=3, max=100, message="Team location must be between 3 and 100 characters.")
+        Length(min=3, max=40, message="Team location must be between 3 and 40 characters."),
+        Regexp(r'^[A-Za-z\s]+$', message="Team location must contain only alphabetic characters and spaces.")
     ])
     number_of_team_members = IntegerField('Number of Team Members', validators=[
         DataRequired(),
@@ -104,11 +105,7 @@ class AddTeamForm(FlaskForm):
         Email(message="Please enter a valid email address."),
         validate_email_domain
     ])
-    # team_phone_number = StringField('Team Phone Number', validators=[
-    #     DataRequired(),
-    #     Length(max=20, message="Phone number must not exceed 20 characters."),
-    #     validate_phone_number
-    # ])
+
     submit = SubmitField('Add Team')
 
 
@@ -116,11 +113,12 @@ class EditTeamForm(FlaskForm):
     """Form for editing an existing team."""
     team_name = StringField('Team Name', validators=[
         DataRequired(),
-        Length(min=3, max=100, message="Team name must be between 3 and 100 characters.")
+        Length(min=3, max=25, message="Team name must be between 3 and 25 characters.")
     ])
     team_location = StringField('Team Location', validators=[
         DataRequired(),
-        Length(min=3, max=100, message="Team location must be between 3 and 100 characters.")
+        Length(min=3, max=40, message="Team location must be between 3 and 40 characters."),
+        Regexp(r'^[A-Za-z\s]+$', message="Team location must contain only alphabetic characters and spaces.")
     ])
     number_of_team_members = IntegerField('Number of Team Members', validators=[
         DataRequired(),
@@ -131,11 +129,7 @@ class EditTeamForm(FlaskForm):
         Email(message="Please enter a valid email address."),
         validate_email_domain
     ])
-    # team_phone_number = StringField('Team Phone Number', validators=[
-    #     DataRequired(),
-    #     Length(max=20, message="Phone number must not exceed 20 characters."),
-    #     validate_phone_number
-    # ]) 
+
     submit = SubmitField('Save Changes')
 
     # Custom email validator (to handle edit scenario)
@@ -170,7 +164,7 @@ class AddTeamMemberForm(FlaskForm):
     ])
     phone_number = StringField('Phone Number', validators=[
         DataRequired(),
-        Length(max=20, message="Phone number must not exceed 20 characters."),
+        Length(min=7,max=20, message="Phone number must be between 7 and 20 characters."),
         validate_phone_number
     ])
     team_id = SelectField('Team', coerce=int, validators=[DataRequired()])
@@ -190,7 +184,7 @@ class EditTeamMemberForm(FlaskForm):
     ])
     phone_number = StringField('Phone Number', validators=[
         DataRequired(),
-        Length(max=20, message="Phone number must not exceed 20 characters."),
+        Length(min=7,max=20, message="Phone number must be between 7 and 20 characters."),
         validate_phone_number  # Custom phone number validator
     ])
     team_id = SelectField('Team', coerce=int, validators=[DataRequired()])
