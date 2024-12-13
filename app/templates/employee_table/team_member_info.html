@@ -18,7 +18,6 @@
   <table class="table table-bordered">
     <thead>
       <tr>
-        <th>ID</th>
         <th>Employee Name</th>
         <th>Email</th>
         <th>Phone</th>
@@ -28,7 +27,6 @@
     <tbody>
       {% for member in members %}
         <tr>
-          <td>{{ member['id'] }}</td>
           <td>{{ member['employee_name'] }}</td>
           <td>{{ member['email_address'] }}</td>
           <td>{{ member['phone_number'] }}</td>
