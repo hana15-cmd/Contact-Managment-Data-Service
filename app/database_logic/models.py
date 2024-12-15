@@ -52,7 +52,7 @@ def add_entry(email, first_name, password, is_admin=False):
             (email, first_name, hashed_password, is_admin)
         )
         database.commit()
-        flash("User created successfully!", "success")
+    
         return redirect(url_for('auth.login'))  # Redirect to login after successful signup
     
     except sqlite3.IntegrityError as e:

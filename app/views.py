@@ -110,56 +110,64 @@ def add_team():
     return render_template( 'team_table/add_team.html', form=form )
 
 
-@views.route( "/edit_team/<string:id>", methods=['POST', 'GET'] )
+@views.route("/edit_team/<string:id>", methods=['POST', 'GET'])
 @login_required
 def edit_team(id):
-    # Initialize the connection to the database
-    con = sql.connect( current_app.config['DATABASE'] )
+    # Initialise the connection to the database
+    con = sql.connect(current_app.config['DATABASE'])
     con.row_factory = sql.Row
     cur = con.cursor()
 
     # Fetch the team data for the specified ID
-    cur.execute( "SELECT * FROM teams WHERE ID=?", (id,) )
+    cur.execute("SELECT * FROM teams WHERE ID=?", (id,))
     data = cur.fetchone()
 
     if not data:
-        flash( "Team not found!", "danger" )
-        return redirect( url_for( "views.contacts" ) )
+        flash("Team not found!", "danger")
+        return redirect(url_for("views.contacts"))
 
     form = EditTeamForm()
-    form.set_team_id( id )
+    form.set_team_id(id)
+
+    # Recalculate the number of members for the team
+    cur.execute("SELECT COUNT(*) FROM contacts WHERE team_id=?", (id,))
+    number_of_members = cur.fetchone()[0]
 
     # Pre-fill the form with existing team data (GET request)
     if request.method == 'GET':
         form.team_name.data = data['TEAM_NAME']
         form.team_location.data = data['TEAM_LOCATION']
-        form.number_of_team_members.data = data['NUMBER_OF_TEAM_MEMBERS']
+        form.number_of_team_members.data = number_of_members  # Set dynamic count
         form.team_email_address.data = data['EMAIL_ADDRESS']
 
     # Handle form submission (POST request)
     if request.method == 'POST' and form.validate_on_submit():
         team_name = form.team_name.data
         team_location = form.team_location.data
-        number_of_team_members = form.number_of_team_members.data
         team_email_address = form.team_email_address.data
 
         try:
+            # Recalculate the number of members again (POST request)
+            cur.execute("SELECT COUNT(*) FROM contacts WHERE team_id=?", (id,))
+            number_of_members = cur.fetchone()[0]
+
             # Update the team data in the database
-            cur.execute( """
-                UPDATE teams 
-                SET TEAM_NAME=?, TEAM_LOCATION=?, NUMBER_OF_TEAM_MEMBERS=?, EMAIL_ADDRESS=? 
+            cur.execute("""
+                UPDATE teams
+                SET TEAM_NAME=?, TEAM_LOCATION=?, NUMBER_OF_TEAM_MEMBERS=?, EMAIL_ADDRESS=?
                 WHERE ID=?
-            """, (team_name, team_location, number_of_team_members, team_email_address, id) )
+            """, (team_name, team_location, number_of_members, team_email_address, id))
+
             con.commit()
 
-            flash( 'Team Updated Successfully', 'success' )
-            return redirect( url_for( "views.contacts" ) )
+            flash('Team Updated Successfully', 'success')
+            return redirect(url_for("views.contacts"))
         except Exception as e:
-            flash( f"An error occurred while updating the team: {e}", 'danger' )
+            flash(f"An error occurred while updating the team: {e}", 'danger')
         finally:
             con.close()
 
-    return render_template( 'team_table/edit_team.html', form=form, datas=data )
+    return render_template('team_table/edit_team.html', form=form, datas=data)
 
 
 @views.route( "/delete_team/<string:id>", methods=['GET'] )
