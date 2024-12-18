@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
-from flask_login import login_required
+from flask_login import current_user, login_required
 from app.forms import AddTeamForm, AddTeamMemberForm, EditTeamForm
 from app.database_logic.models import add_dummy_contacts_data, add_entry, admin_required, get_database
 import sqlite3 as sql
@@ -7,9 +7,14 @@ from .forms import EditTeamMemberForm
 
 views = Blueprint( 'views', __name__ )
 
-@views.route( '/' )
+@views.route('/')
 def home():
-    return render_template( "homepage.html" )
+    # Check if the user is logged in by looking for a session key
+    if session.get('user_id'):
+        # Redirect logged-in users to the contact manager page
+        return redirect(url_for('views.contacts'))
+    # Otherwise, render the home page
+    return render_template("homepage.html")
 
 @views.route( '/init_db' )
 def initialize_db():
@@ -66,6 +71,7 @@ def contacts():
 
     cursor.execute( sql_query, sql_params )
     data = cursor.fetchall()
+
 
     # Return the template with the filtered data and search information
     return render_template( "index.html", datas=data, search_query=search_query, filter_column=filter_column )
