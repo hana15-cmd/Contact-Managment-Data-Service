@@ -7,10 +7,10 @@ from app import create_app
 @pytest.fixture
 def app():
     app = create_app()
-    app.config.update( {
+    app.config.update({
         "TESTING": True,
         "WTF_CSRF_ENABLED": False  # Disable CSRF for testing
-    } )
+    })
 
     with app.app_context():
         yield app

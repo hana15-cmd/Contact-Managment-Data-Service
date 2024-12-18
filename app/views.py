@@ -7,11 +7,9 @@ from .forms import EditTeamMemberForm
 
 views = Blueprint( 'views', __name__ )
 
-
 @views.route( '/' )
 def home():
     return render_template( "homepage.html" )
-
 
 @views.route( '/init_db' )
 def initialize_db():
@@ -66,7 +64,6 @@ def contacts():
             """
             sql_params.extend( [f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"] )
 
-    # Execute the query with parameters (this prevents SQL injection)
     cursor.execute( sql_query, sql_params )
     data = cursor.fetchall()
 
@@ -231,7 +228,7 @@ def see_team_members(id):
         if con:
             con.close()
 
-
+ # This is the second table routings 
 @views.route( "/add_team_member/<int:team_id>", methods=['POST', 'GET'] )
 @login_required
 def add_team_member(team_id):

@@ -28,18 +28,22 @@ def init_db_scheme():
         add_dummy_contacts_data()  # Adding dummy contacts
         database.commit()
 
-
-# Add a new user to the users table with email and password
 def add_entry(email, first_name, password, is_admin=False):
-    # Check if the email already exists
+    """
+    Adds a new user to the database. Returns:
+    - 'success' if user is added successfully
+    - ('email_taken', existing_user) if the email already exists
+    - 'error' for other database errors
+    """
     database = get_database()
+
+    # Check if the email already exists
     existing_user = database.execute(
-        "SELECT id FROM users WHERE email = ?", (email,)
+        "SELECT id, first_name FROM users WHERE email = ?", (email,)
     ).fetchone()
 
     if existing_user:
-        flash("Email is already taken, please use a different one.", "danger")
-        return redirect(url_for('auth.signup'))  # Assuming you have a signup route
+        return 'email_taken', existing_user  # Include user info in response
 
     # If email is not found, proceed with inserting the new user
     hashed_password = generate_password_hash(password)
@@ -52,14 +56,10 @@ def add_entry(email, first_name, password, is_admin=False):
             (email, first_name, hashed_password, is_admin)
         )
         database.commit()
-    
-        return redirect(url_for('auth.login'))  # Redirect to login after successful signup
-    
-    except sqlite3.IntegrityError as e:
-        # Handle specific IntegrityError if any
-        flash("An error occurred while creating the user.", "danger")
-        return redirect(url_for('auth.signup'))
+        return 'success'  # Indicate successful insertion
 
+    except sqlite3.IntegrityError:
+        return 'error'  # Indicate a generic database error
 
 # Add dummy teams data to the teams table
 def add_dummy_teams_data():

@@ -50,7 +50,6 @@ class SignupForm(FlaskForm):
     """Form for user signup."""
     email = StringField('Email', validators=[
         DataRequired(),
-        Email(message="Please enter a valid email address.")
     ])
     first_name = StringField('First Name', validators=[
         DataRequired(),
