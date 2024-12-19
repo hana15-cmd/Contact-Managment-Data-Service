@@ -33,6 +33,7 @@ def initialize_db():
 
 
 @views.route( '/contactManager', methods=['GET', 'POST'] )
+@login_required
 def contacts():
     # Get search and filter query parameters from the URL (default to empty if not provided)
     search_query = request.args.get( 'search', '' )  # Get the search query from the URL

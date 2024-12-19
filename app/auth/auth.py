@@ -1,5 +1,5 @@
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
-from flask_login import login_user
+from flask_login import login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.forms import SignupForm, is_email_taken
 from app.database_logic.models import add_entry, get_database
@@ -70,12 +70,15 @@ def login():
     return render_template( 'auth/login.html' )
 
 
-@auth.route( '/logout', methods=['GET'] )
+@auth.route('/logout', methods=['GET'])
 def logout():
-    # Clear session variables upon logout
-    session.pop( 'user_id', None )
-    session.pop( 'user_name', None )
-    session.pop( 'is_admin', None )  # Remove admin info from session
+    # Log the user out using Flask-Login
+    logout_user()
+    
+    # Optionally, you can clear session variables manually if needed (this is usually redundant with Flask-Login)
+    session.pop('user_id', None)
+    session.pop('user_name', None)
+    session.pop('is_admin', None)
 
-    flash( 'You were successfully logged out', category='success' )
-    return redirect( url_for( 'auth.login' ) )
+    flash('You were successfully logged out', category='success')
+    return redirect(url_for('auth.login'))
