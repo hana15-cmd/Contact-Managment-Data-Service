@@ -10,7 +10,6 @@ def create_app():
     app.config['SECRET_KEY'] = 'hellohello'
     app.config.update(dict(
     DATABASE=os.path.join(app.root_path, os.getenv('DATABASE', 'database.db')),
-    SECRET_KEY=['hihihi']))
     
     login_manager = LoginManager()
 
