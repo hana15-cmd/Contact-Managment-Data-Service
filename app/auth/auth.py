@@ -75,7 +75,6 @@ def logout():
     # Log the user out using Flask-Login
     logout_user()
     
-    # Optionally, you can clear session variables manually if needed (this is usually redundant with Flask-Login)
     session.pop('user_id', None)
     session.pop('user_name', None)
     session.pop('is_admin', None)
