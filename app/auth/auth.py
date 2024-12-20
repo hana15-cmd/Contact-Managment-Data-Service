@@ -10,7 +10,7 @@ auth = Blueprint( 'auth', __name__ )
 
 @auth.route('/signup', methods=['GET', 'POST'])
 def signup():
-    form = SignupForm()  # Assuming you have a Flask-WTF form defined for signup
+    form = SignupForm() 
 
     if form.validate_on_submit():
         # Extract data from the form
