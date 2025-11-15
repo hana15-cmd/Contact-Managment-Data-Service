@@ -1,6 +1,6 @@
 import random
 import sqlite3
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 from flask import current_app, flash, g, redirect, session, url_for
 from functools import wraps
 

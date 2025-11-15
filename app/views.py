@@ -347,3 +347,39 @@ def delete_team_member(member_id):
 
     flash( 'Team member deleted successfully!', 'danger' )
     return redirect( url_for( 'views.see_team_members', id=member['team_id'] ) )
+
+@views.route('/support-rota')
+def support_rota():
+    # Example: rota[week][day] = {name, team}
+    rota = [
+        {  # Week 1
+            'Monday':    {'name': 'Alice',   'team': 'DevOps'},
+            'Tuesday':   {'name': 'Bob',     'team': 'Backend'},
+            'Wednesday': {'name': 'Charlie', 'team': 'Frontend'},
+            'Thursday':  {'name': 'Dana',    'team': 'QA'},
+            'Friday':    {'name': 'Eve',     'team': 'DevOps'},
+        },
+        {  # Week 2
+            'Monday':    {'name': 'Frank',   'team': 'Backend'},
+            'Tuesday':   {'name': 'Grace',   'team': 'Frontend'},
+            'Wednesday': {'name': 'Heidi',   'team': 'QA'},
+            'Thursday':  {'name': 'Ivan',    'team': 'DevOps'},
+            'Friday':    {'name': 'Judy',    'team': 'Backend'},
+        },
+        {  # Week 3
+            'Monday':    {'name': 'Mallory', 'team': 'Frontend'},
+            'Tuesday':   {'name': 'Niaj',    'team': 'QA'},
+            'Wednesday': {'name': 'Olivia',  'team': 'DevOps'},
+            'Thursday':  {'name': 'Peggy',   'team': 'Backend'},
+            'Friday':    {'name': 'Sybil',   'team': 'Frontend'},
+        },
+        {  # Week 4
+            'Monday':    {'name': 'Trent',   'team': 'QA'},
+            'Tuesday':   {'name': 'Victor',  'team': 'DevOps'},
+            'Wednesday': {'name': 'Walter',  'team': 'Backend'},
+            'Thursday':  {'name': 'Xavier',  'team': 'Frontend'},
+            'Friday':    {'name': 'Yvonne',  'team': 'QA'},
+        }
+    ]
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    return render_template('support_rota.html', rota=rota, days=days)
