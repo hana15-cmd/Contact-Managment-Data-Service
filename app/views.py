@@ -331,55 +331,25 @@ def edit_team_member(member_id):
     return render_template( 'employee_table/edit_employee.html', form=form, member=member )
 
 
-@views.route( "/delete_team_member/<int:member_id>", methods=['GET'] )
+@views.route("/delete_team_member/<int:member_id>", methods=['GET'])
 @admin_required
 def delete_team_member(member_id):
-    con = sql.connect( current_app.config['DATABASE'] )
+    con = sql.connect(current_app.config['DATABASE'])
     con.row_factory = sql.Row
     cur = con.cursor()
-    cur.execute( "SELECT * FROM contacts WHERE id=?", (member_id,) )
+    cur.execute("SELECT * FROM contacts WHERE id=?", (member_id,))
     member = cur.fetchone()
 
+    # Extra security: Only allow deletion if current_user is admin
+    if not current_user.is_authenticated or not getattr(current_user, 'is_admin', False):
+        flash('You do not have permission to delete this member.', 'danger')
+        return redirect(url_for('views.home'))
+
     # Delete the member from the database
-    con.execute( "DELETE FROM contacts WHERE id=?", (member_id,) )
+    cur.execute("DELETE FROM contacts WHERE id=?", (member_id,))
     con.commit()
     con.close()
 
-    flash( 'Team member deleted successfully!', 'danger' )
-    return redirect( url_for( 'views.see_team_members', id=member['team_id'] ) )
+    flash('Team member deleted successfully!', 'danger')
+    return redirect(url_for('views.see_team_members', id=member['team_id']))
 
-@views.route('/support-rota')
-def support_rota():
-    # Example: rota[week][day] = {name, team}
-    rota = [
-        {  # Week 1
-            'Monday':    {'name': 'Alice',   'team': 'DevOps'},
-            'Tuesday':   {'name': 'Bob',     'team': 'Backend'},
-            'Wednesday': {'name': 'Charlie', 'team': 'Frontend'},
-            'Thursday':  {'name': 'Dana',    'team': 'QA'},
-            'Friday':    {'name': 'Eve',     'team': 'DevOps'},
-        },
-        {  # Week 2
-            'Monday':    {'name': 'Frank',   'team': 'Backend'},
-            'Tuesday':   {'name': 'Grace',   'team': 'Frontend'},
-            'Wednesday': {'name': 'Heidi',   'team': 'QA'},
-            'Thursday':  {'name': 'Ivan',    'team': 'DevOps'},
-            'Friday':    {'name': 'Judy',    'team': 'Backend'},
-        },
-        {  # Week 3
-            'Monday':    {'name': 'Mallory', 'team': 'Frontend'},
-            'Tuesday':   {'name': 'Niaj',    'team': 'QA'},
-            'Wednesday': {'name': 'Olivia',  'team': 'DevOps'},
-            'Thursday':  {'name': 'Peggy',   'team': 'Backend'},
-            'Friday':    {'name': 'Sybil',   'team': 'Frontend'},
-        },
-        {  # Week 4
-            'Monday':    {'name': 'Trent',   'team': 'QA'},
-            'Tuesday':   {'name': 'Victor',  'team': 'DevOps'},
-            'Wednesday': {'name': 'Walter',  'team': 'Backend'},
-            'Thursday':  {'name': 'Xavier',  'team': 'Frontend'},
-            'Friday':    {'name': 'Yvonne',  'team': 'QA'},
-        }
-    ]
-    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-    return render_template('support_rota.html', rota=rota, days=days)
