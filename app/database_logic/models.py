@@ -1,6 +1,7 @@
 import random
 import sqlite3
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import current_user
+from werkzeug.security import generate_password_hash
 from flask import current_app, flash, g, redirect, session, url_for
 from functools import wraps
 
@@ -144,9 +145,9 @@ def add_dummy_contacts_data():
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('is_admin'):
+        if not current_user.is_authenticated or not getattr(current_user, 'is_admin', False):
             flash('Admin privileges required.', 'danger')
-            return redirect(url_for("views.contacts"))
+            return redirect(url_for("views.home"))
         return f(*args, **kwargs)
     return decorated_function
 
