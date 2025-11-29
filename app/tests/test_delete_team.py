@@ -24,3 +24,15 @@ def test_delete_team(client):
         response = client.get('/delete_team/1')
         assert response.status_code == 302
     patcher.stop()
+
+def test_delete_team_requires_admin(client):
+    with client.session_transaction() as sess:
+        sess['user_id'] = 2  # Non-admin user
+    response = client.get('/delete_team/1')
+    assert response.status_code == 302  # Forbidden for non-admins
+
+def test_delete_team_requires_login(client):
+    response = client.get('/delete_team/1')
+    assert response.status_code == 302  # Should redirect to login
+
+

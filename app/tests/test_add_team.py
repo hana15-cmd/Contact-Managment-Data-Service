@@ -1,3 +1,4 @@
+from flask.testing import FlaskClient
 import pytest
 from unittest import mock
 from app import create_app
@@ -15,12 +16,12 @@ def login(client):
     with client.session_transaction() as sess:
         sess['user_id'] = 1
 
-def test_add_team_get(client):
+def test_add_team_get(client: FlaskClient):
     login(client)
     response = client.get('/add_team', follow_redirects=True)
     assert response.status_code == 200
 
-def test_add_team_post(client):
+def test_add_team_post(client: FlaskClient):
     login(client)
     with mock.patch('app.forms.AddTeamForm.validate_on_submit', return_value=True), \
          mock.patch('app.forms.AddTeamForm.team_name', new_callable=mock.PropertyMock, return_value=mock.Mock(data='Team')), \
@@ -30,3 +31,16 @@ def test_add_team_post(client):
          mock.patch('sqlite3.connect'):
         response = client.post('/add_team', follow_redirects=True)
         assert response.status_code == 200
+
+
+def test_add_team_post_invalid(client: FlaskClient):
+    login(client)
+    with mock.patch('app.forms.AddTeamForm.validate_on_submit', return_value=False):
+        response = client.post('/add_team', follow_redirects=True)
+        assert response.status_code == 200
+
+def test_add_team_requires_login(client: FlaskClient):
+    response = client.get('/add_team')
+    assert response.status_code == 302  # Should redirect to login
+    response = client.post('/add_team')
+    assert response.status_code == 302  # Should redirect to login

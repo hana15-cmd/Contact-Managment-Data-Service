@@ -4,9 +4,31 @@
 
 {% block content %}
     <div class="centered-container">
-        <div class="content">
-            <h1 class="py-3">Welcome to Contact Manager, Please Sign Up or Log In </h1>
-            <div class="button-container">
+        <div class="content text-center">
+            <h1 class="py-3">Welcome to Contact Manager</h1>
+            <p class="lead">
+                Stay on top of who’s where in the department, and how teams are organized.
+                Browse teams, view members, and keep contact details up to date so everyone can connect quickly.
+            </p>
+            <div class="row justify-content-center my-3">
+                <div class="col-md-8">
+                    <ul class="list-group text-start">
+                        <li class="list-group-item">
+                            • See all teams and their locations
+                        </li>
+                        <li class="list-group-item">
+                            • Find team members and their contact info
+                        </li>
+                        <li class="list-group-item">
+                            • Add, edit, and manage team membership
+                        </li>
+                        <li class="list-group-item">
+                            • Keep the department directory accurate and searchable
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="button-container mt-4">
                 <a href="/login" class="btn btn-primary btn-lg mx-2">Log In</a>
                 <a href="/signup" class="btn btn-outline-primary btn-lg mx-2">Sign Up</a>
             </div>

@@ -104,9 +104,11 @@ class AddTeamForm(FlaskForm):
         Email(message="Please enter a valid email address."),
         validate_email_domain
     ])
-
     submit = SubmitField('Add Team')
 
+    def validate_team_email_address(self, field):
+        if is_email_taken(field.data):
+            raise ValidationError("This email is already registered to another team.")
 
 class EditTeamForm(FlaskForm):
     """Form for editing an existing team."""
