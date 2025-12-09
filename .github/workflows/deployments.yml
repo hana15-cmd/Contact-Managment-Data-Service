@@ -3,57 +3,48 @@ name: Flask App CI
 on:
   push:
     branches: ["main"]
-  # pull_request:
-  #   branches: ["main"]
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    env:
+      FLASK_ENV: testing
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
     steps:
-      # --- Checkout code ---
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # --- Install Python 3.13 ---
-      - name: Set up Python 3.13
+      - name: Set up Python
         uses: actions/setup-python@v5
-        with: 
+        with:
           python-version: "3.13"
 
-      # --- Cache pip for faster CI ---
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      # --- Install dependencies ---
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # # --- Lint code (flake8) ---
-      # - name: Lint with flake8
-      #   run: |
-      #     pip install flake8
-      #     flake8 .
+      - name: Run smoke tests
+        run: |
+          pip install pytest
+          pytest -q app/tests/test_smoke.py
 
-      # --- Run pytest ---
-      - name: Run tests
+      - name: Run full test suite
         run: |
           pip install pytest
           pytest
 
-      # --- Run tests with coverage ---
       - name: Run tests with coverage
         run: |
           pip install coverage pytest-cov
           coverage run -m pytest
           coverage xml
+
+      - name: Fail if coverage is too low
+        run: |
+          coverage report --fail-under=70
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
