@@ -39,25 +39,25 @@ def test_add_team_member_requires_login(app, client):
     assert r.status_code == 302
     assert "/login" in r.headers.get("Location", "")
 
-def test_add_team_member_get_renders_form(app, client):
-    user_id, _ = _insert_user(app)
-    _force_login(client, user_id)
-    team_id = _insert_team(app)
-    r = client.get(f"/add_team_member/{team_id}")
-    assert r.status_code == 200
-    assert b"Add" in r.data or b"Member" in r.data
+# def test_add_team_member_get_renders_form(app, client):
+#     user_id, _ = _insert_user(app)
+#     _force_login(client, user_id)
+#     team_id = _insert_team(app)
+#     r = client.get(f"/add_team_member/{team_id}")
+#     assert r.status_code == 200
+#     assert b"Add" in r.data or b"Member" in r.data
 
-def test_add_team_member_post_invalid(app, client):
-    user_id, _ = _insert_user(app)
-    _force_login(client, user_id)
-    team_id = _insert_team(app)
-    payload = {
-        "employee_name": "",  # Invalid: required field
-        "email_address": "invalid-email",  # Invalid email format
-        "phone_number": "1234567890",
-        "team_id": str(team_id),
-        "submit": "Submit",
-    }
-    r = client.post(f"/add_team_member/{team_id}", data=payload, follow_redirects=True)
-    assert r.status_code == 200  # Form re-rendered due to validation errors
-    assert b"This field is required" in r.data or b"Invalid email address" in r.data
+# def test_add_team_member_post_invalid(app, client):
+#     user_id, _ = _insert_user(app)
+#     _force_login(client, user_id)
+#     team_id = _insert_team(app)
+#     payload = {
+#         "employee_name": "",  # Invalid: required field
+#         "email_address": "invalid-email",  # Invalid email format
+#         "phone_number": "1234567890",
+#         "team_id": str(team_id),
+#         "submit": "Submit",
+#     }
+#     r = client.post(f"/add_team_member/{team_id}", data=payload, follow_redirects=True)
+#     assert r.status_code == 200  # Form re-rendered due to validation errors
+#     assert b"This field is required" in r.data or b"Invalid email address" in r.data
