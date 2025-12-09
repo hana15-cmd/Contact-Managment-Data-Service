@@ -11,19 +11,21 @@ def _load_schema(db_file):
 
 @pytest.fixture(scope="session")
 def app(tmp_path_factory):
+    # Create a temp DB per test session
     db_path = str(tmp_path_factory.mktemp("db") / "test.db")
     application = create_app()
     application.config.update(
         TESTING=True,
         WTF_CSRF_ENABLED=False,
-        SECRET_KEY="test",
+        SECRET_KEY="test-secret",
         DATABASE=db_path,
     )
     _load_schema(db_path)
     return application
 
-@pytest.fixture
+@pytest.fixture()
 def client(app):
+    # Ensure schema exists before each test
     _load_schema(app.config["DATABASE"])
-    with app.test_client() as c:
-        yield c
+    c = app.test_client()
+    return c
