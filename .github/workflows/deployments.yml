@@ -5,8 +5,8 @@ on:
     branches:
       - "main"
     tags:
-      - "v*.*.*"      # Deploy on version tags like v1.0.0
-      - "release-*"   # Deploy on tags like release-2025-01
+      - "v*.*.*"
+      - "release-*"
 
 jobs:
   build-test:
@@ -51,9 +51,9 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
-      - name: Deploy using Render Hook
+      - name: Trigger Render deploy hook
         run: |
-          echo "Deploying service $SERVICE_ID…"
+          echo "Deploying service..."
           curl -X POST "https://api.render.com/deploy/${SERVICE_ID}?key=${API_KEY}"
           echo "Deployment triggered."
         env:
