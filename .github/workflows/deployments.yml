@@ -50,6 +50,7 @@ jobs:
       TESTING: "true"
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
       DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -79,15 +80,23 @@ jobs:
     name: Deploy to Render
     needs: build-test
     runs-on: ubuntu-latest
+
     steps:
-      - name: Trigger Render deploy hook
+      - name: Show Render deploy hook info (without exposing secret)
         run: |
-          echo "Deploying service..."
-          curl -X POST "https://api.render.com/deploy/${SERVICE_ID}?key=${API_KEY}"
+          echo "Using Render deploy hook:"
+          sanitized="${RENDER_DEPLOY_HOOK%key=*}key=***"
+          echo "$sanitized"
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+
+      - name: Trigger Render Deploy
+        run: |
+          echo "Deploying service to Render..."
+          curl -s -o /dev/null -w "%{http_code}" -X POST "$RENDER_DEPLOY_HOOK"
           echo "Deployment triggered."
         env:
-          SERVICE_ID: ${{ secrets.SERVICE_ID }}
-          API_KEY: ${{ secrets.API_KEY }}
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
 
   smoke:
     name: Smoke Tests After Deploy
@@ -98,6 +107,7 @@ jobs:
       TESTING: "true"
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
       DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
