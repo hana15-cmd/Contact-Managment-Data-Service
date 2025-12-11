@@ -7,9 +7,6 @@ on:
 
 jobs:
 
-  # -----------------------------
-  # 1️⃣ Version Bump
-  # -----------------------------
   version-bump:
     name: Auto Increment Version
     runs-on: ubuntu-latest
@@ -51,7 +48,7 @@ jobs:
           echo "new_version=$new_version" >> $GITHUB_ENV
 
       - name: Show new version
-          run: echo "Next version: ${{ env.new_version }}"
+         run: echo "Next version: ${{ env.new_version }}"
 
 
   build-test:
@@ -92,13 +89,9 @@ jobs:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
           echo "Triggering deployment to Render..."
-
-          # Send deployment request
           http_status=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$RENDER_DEPLOY_HOOK")
-
           echo "Render HTTP response: $http_status"
 
-          # Check for success
           if [[ "$http_status" =~ ^2 ]]; then
             echo "Deployment accepted by Render."
           else
