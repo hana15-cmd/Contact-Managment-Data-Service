@@ -22,36 +22,29 @@ jobs:
         id: get_tag
         run: |
           latest=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "Latest tag = $latest"
           echo "latest_tag=$latest" >> "$GITHUB_ENV"
 
-      - name: Auto-increment patch version (idempotent)
+      - name: Auto-increment patch version
         id: bump
         run: |
           latest=${latest_tag#v}
           IFS='.' read -r major minor patch <<< "$latest"
           patch=$((patch + 1))
           new_version="v$major.$minor.$patch"
-          echo "Computed new_version=$new_version"
 
-          # If tag already exists, skip creating it
           if git rev-parse "$new_version" >/dev/null 2>&1; then
-            echo "Tag $new_version already exists — skipping creation."
-            echo "new_version=$new_version" >> "$GITHUB_ENV"
-            exit 0
+            echo "Tag already exists: $new_version"
+          else
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git tag "$new_version"
+            git push origin "$new_version"
           fi
 
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-
-          git tag "$new_version"
-          git push origin "$new_version"
-
-          echo "Created and pushed tag $new_version"
           echo "new_version=$new_version" >> "$GITHUB_ENV"
 
-      - name: Output chosen version
-        run: echo "Using version: ${{ env.new_version }}"
+      - name: Output new version
+        run: echo "Using version ${{ env.new_version }}"
 
   build-test:
     name: Run Test Suite
@@ -93,29 +86,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Show sanitized deploy hook info
+      - name: Log deploy hook (sanitized)
         run: |
-          # Show safe sanitized hook (hide key portion)
-          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
-            echo "RENDER_DEPLOY_HOOK is not set"
-            exit 1
-          fi
           sanitized=$(echo "$RENDER_DEPLOY_HOOK" | sed 's/key=[^&]*/key=***hidden***/')
-          echo "Using deploy hook: $sanitized"
+          echo "Render deploy hook: $sanitized"
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
 
-      - name: Trigger Render deployment and check response
+      - name: Trigger Render deployment
         run: |
-          echo "Calling Render deploy hook..."
-          http_code=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "$RENDER_DEPLOY_HOOK" || true)
-          echo "Render HTTP response code: $http_code"
-          # Accept 2xx or 201/202 depending on API; treat 200-299 as success
+          http_code=$(curl -sS -o /dev/null -w "%{http_code}" -X POST "$RENDER_DEPLOY_HOOK")
+          echo "Render HTTP response: $http_code"
+
           if [[ "$http_code" =~ ^2[0-9][0-9]$ ]]; then
-            echo "Render deploy hook accepted the request."
+            echo "Render accepted deployment."
           else
-            echo "Render deploy hook did not accept the request (HTTP $http_code)."
-            echo "Please verify the RENDER_DEPLOY_HOOK secret is correct."
+            echo "Deploy failed — invalid hook? HTTP $http_code"
             exit 1
           fi
         env:
