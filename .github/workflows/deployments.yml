@@ -48,7 +48,7 @@ jobs:
           echo "new_version=$new_version" >> $GITHUB_ENV
 
       - name: Show new version
-         run: echo "Next version: ${{ env.new_version }}"
+        run: echo "Next version: ${{ env.new_version }}"
 
 
   build-test:
