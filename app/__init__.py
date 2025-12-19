@@ -2,7 +2,7 @@ from flask import Flask
 from flask_login import LoginManager
 from .config import BaseConfig
 from .views import views
-from .auth.auth import auth
+from .auth.auth import auth, seed_default_users
 from app.user_auth import User
 
 login_manager = LoginManager()
@@ -21,7 +21,6 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(BaseConfig)
 
-    # Testing overrides
     if app.config.get("TESTING"):
         app.config.update(
             WTF_CSRF_ENABLED=False,
@@ -32,4 +31,9 @@ def create_app():
 
     app.register_blueprint(views, url_prefix="/")
     app.register_blueprint(auth, url_prefix="/")
+
+    # Seed defaults at startup (idempotent)
+    with app.app_context():
+        seed_default_users()
+
     return app
