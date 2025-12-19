@@ -24,13 +24,13 @@ except ImportError:
     DEFAULT_USER_PASSWORD = os.getenv("DEFAULT_USER_PASSWORD")
 
 DEFAULT_ADMIN = {
-    "email": DEFAULT_ADMIN_EMAIL,
+    "email": (DEFAULT_ADMIN_EMAIL or "").strip().lower(),
     "first_name": DEFAULT_ADMIN_NAME,
     "password": DEFAULT_ADMIN_PASSWORD,
     "is_admin": True,
 }
 DEFAULT_USER = {
-    "email": DEFAULT_USER_EMAIL,
+    "email": (DEFAULT_USER_EMAIL or "").strip().lower(),
     "first_name": DEFAULT_USER_NAME,
     "password": DEFAULT_USER_PASSWORD,
     "is_admin": False,
@@ -47,18 +47,17 @@ def _set_hashed_password(user_id: int, raw_password: str):
         con.commit()
 
 def seed_default_users():
-    """Seed defaults only if email and password are provided; hash on insert."""
+    """Ensure default admin/user exist and have hashed passwords."""
     try:
         for u in (DEFAULT_ADMIN, DEFAULT_USER):
-            if not u["email"] or not u["password"]:
-                continue
             user = User.get_by_email(u["email"])
             if not user:
-                hashed = generate_password_hash(u["password"])
-                add_entry(u["email"], u["first_name"], hashed, u["is_admin"])
+                add_entry(u["email"], u["first_name"], u["password"], u["is_admin"])
                 user = User.get_by_email(u["email"])
                 current_app.logger.info(f"Seeded default user: {u['email']}")
-            elif not _looks_hashed(user.password):
+
+            # If the password in DB is plaintext (e.g., after reset), hash it once
+            if user and not _looks_hashed(user.password):
                 _set_hashed_password(user.id, u["password"])
                 current_app.logger.info(f"Normalized password hash for: {u['email']}")
     except Exception as e:
