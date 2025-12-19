@@ -9,17 +9,30 @@ from app.user_auth import User
 
 auth = Blueprint('auth', __name__)
 
+# Load secrets from a gitignored local file if present, else from env
+try:
+    from app.local_secrets import (
+        DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_NAME, DEFAULT_ADMIN_PASSWORD,
+        DEFAULT_USER_EMAIL, DEFAULT_USER_NAME, DEFAULT_USER_PASSWORD,
+    )
+except ImportError:
+    DEFAULT_ADMIN_EMAIL = os.getenv("DEFAULT_ADMIN_EMAIL")
+    DEFAULT_ADMIN_NAME = os.getenv("DEFAULT_ADMIN_NAME", "Admin")
+    DEFAULT_ADMIN_PASSWORD = os.getenv("DEFAULT_ADMIN_PASSWORD")
+    DEFAULT_USER_EMAIL = os.getenv("DEFAULT_USER_EMAIL")
+    DEFAULT_USER_NAME = os.getenv("DEFAULT_USER_NAME", "Regular")
+    DEFAULT_USER_PASSWORD = os.getenv("DEFAULT_USER_PASSWORD")
+
 DEFAULT_ADMIN = {
-    "email": os.getenv("DEFAULT_ADMIN_EMAIL", "Admin@teams.com"),
-    "first_name": os.getenv("DEFAULT_ADMIN_NAME", "Admin"),
-    "password": os.getenv("DEFAULT_ADMIN_PASSWORD", "Admin123!"),
+    "email": DEFAULT_ADMIN_EMAIL,
+    "first_name": DEFAULT_ADMIN_NAME,
+    "password": DEFAULT_ADMIN_PASSWORD,
     "is_admin": True,
 }
-
 DEFAULT_USER = {
-    "email": os.getenv("DEFAULT_USER_EMAIL", "Regular@teams.com"),
-    "first_name": os.getenv("DEFAULT_USER_NAME", "Regular"),
-    "password": os.getenv("DEFAULT_USER_PASSWORD", "Regular123!"),
+    "email": DEFAULT_USER_EMAIL,
+    "first_name": DEFAULT_USER_NAME,
+    "password": DEFAULT_USER_PASSWORD,
     "is_admin": False,
 }
 
@@ -34,17 +47,18 @@ def _set_hashed_password(user_id: int, raw_password: str):
         con.commit()
 
 def seed_default_users():
-    """Ensure default admin/user exist and have hashed passwords."""
+    """Seed defaults only if email and password are provided; hash on insert."""
     try:
         for u in (DEFAULT_ADMIN, DEFAULT_USER):
+            if not u["email"] or not u["password"]:
+                continue
             user = User.get_by_email(u["email"])
             if not user:
-                add_entry(u["email"], u["first_name"], u["password"], u["is_admin"])
+                hashed = generate_password_hash(u["password"])
+                add_entry(u["email"], u["first_name"], hashed, u["is_admin"])
                 user = User.get_by_email(u["email"])
                 current_app.logger.info(f"Seeded default user: {u['email']}")
-
-            # If the password in DB is plaintext (e.g., after reset), hash it once
-            if user and not _looks_hashed(user.password):
+            elif not _looks_hashed(user.password):
                 _set_hashed_password(user.id, u["password"])
                 current_app.logger.info(f"Normalized password hash for: {u['email']}")
     except Exception as e:
