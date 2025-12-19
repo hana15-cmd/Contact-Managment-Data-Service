@@ -4,37 +4,41 @@ from flask import Blueprint, current_app, flash, redirect, render_template, requ
 from flask_login import login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.forms import SignupForm
-from app.database_logic.models import add_entry
+from app.database_logic.models import add_entry, init_db_scheme
 from app.user_auth import User
 
 auth = Blueprint('auth', __name__)
 
-# Load secrets from a gitignored local file if present, else from env
-try:
-    from app.local_secrets import (
-        DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_NAME, DEFAULT_ADMIN_PASSWORD,
-        DEFAULT_USER_EMAIL, DEFAULT_USER_NAME, DEFAULT_USER_PASSWORD,
-    )
-except ImportError:
-    DEFAULT_ADMIN_EMAIL = os.getenv("DEFAULT_ADMIN_EMAIL")
-    DEFAULT_ADMIN_NAME = os.getenv("DEFAULT_ADMIN_NAME", "Admin")
-    DEFAULT_ADMIN_PASSWORD = os.getenv("DEFAULT_ADMIN_PASSWORD")
-    DEFAULT_USER_EMAIL = os.getenv("DEFAULT_USER_EMAIL")
-    DEFAULT_USER_NAME = os.getenv("DEFAULT_USER_NAME", "Regular")
-    DEFAULT_USER_PASSWORD = os.getenv("DEFAULT_USER_PASSWORD")
+def load_defaults():
+    """Load default credentials from local_secrets.py or environment."""
+    try:
+        from app.local_secrets import (
+            DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_NAME, DEFAULT_ADMIN_PASSWORD,
+            DEFAULT_USER_EMAIL, DEFAULT_USER_NAME, DEFAULT_USER_PASSWORD,
+        )
+    except ImportError:
+        DEFAULT_ADMIN_EMAIL = os.getenv("DEFAULT_ADMIN_EMAIL")
+        DEFAULT_ADMIN_NAME = os.getenv("DEFAULT_ADMIN_NAME", "Admin")
+        DEFAULT_ADMIN_PASSWORD = os.getenv("DEFAULT_ADMIN_PASSWORD")
+        DEFAULT_USER_EMAIL = os.getenv("DEFAULT_USER_EMAIL")
+        DEFAULT_USER_NAME = os.getenv("DEFAULT_USER_NAME", "Regular")
+        DEFAULT_USER_PASSWORD = os.getenv("DEFAULT_USER_PASSWORD")
 
-DEFAULT_ADMIN = {
-    "email": (DEFAULT_ADMIN_EMAIL or "").strip().lower(),
-    "first_name": DEFAULT_ADMIN_NAME,
-    "password": DEFAULT_ADMIN_PASSWORD,
-    "is_admin": True,
-}
-DEFAULT_USER = {
-    "email": (DEFAULT_USER_EMAIL or "").strip().lower(),
-    "first_name": DEFAULT_USER_NAME,
-    "password": DEFAULT_USER_PASSWORD,
-    "is_admin": False,
-}
+    admin = {
+        "email": (DEFAULT_ADMIN_EMAIL or "").strip(),   # preserve capitalization
+        "first_name": DEFAULT_ADMIN_NAME,
+        "password": DEFAULT_ADMIN_PASSWORD,
+        "is_admin": True,
+    }
+    user = {
+        "email": (DEFAULT_USER_EMAIL or "").strip(),    # preserve capitalization
+        "first_name": DEFAULT_USER_NAME,
+        "password": DEFAULT_USER_PASSWORD,
+        "is_admin": False,
+    }
+    return admin, user
+
+DEFAULT_ADMIN, DEFAULT_USER = load_defaults()
 
 def _looks_hashed(pw: str) -> bool:
     return isinstance(pw, str) and pw.startswith(("pbkdf2:", "scrypt:", "argon2:"))
@@ -50,38 +54,45 @@ def seed_default_users():
     """Ensure default admin/user exist and have hashed passwords."""
     try:
         for u in (DEFAULT_ADMIN, DEFAULT_USER):
-            user = User.get_by_email(u["email"])
-            if not user:
-                add_entry(u["email"], u["first_name"], u["password"], u["is_admin"])
-                user = User.get_by_email(u["email"])
-                current_app.logger.info(f"Seeded default user: {u['email']}")
+            email = (u["email"] or "").strip()
+            pwd = (u["password"] or "").strip()
+            if not email or not pwd:
+                current_app.logger.info(f"[seed] skip: missing email/password for {u}")
+                continue
 
-            # If the password in DB is plaintext (e.g., after reset), hash it once
+            user = User.get_by_email(email)
+            if not user:
+                result = add_entry(email, u["first_name"], pwd, u["is_admin"])
+                current_app.logger.info(f"[seed] add_entry({email}) -> {result}")
+                user = User.get_by_email(email)
+
             if user and not _looks_hashed(user.password):
-                _set_hashed_password(user.id, u["password"])
-                current_app.logger.info(f"Normalized password hash for: {u['email']}")
+                _set_hashed_password(user.id, pwd)
+                current_app.logger.info(f"[seed] normalized hash for {email}")
     except Exception as e:
-        current_app.logger.warning(f"Default user seeding skipped: {e}")
+        current_app.logger.warning(f"[seed] failed: {e}")
 
 @auth.before_app_request
-def ensure_seeded_once():
-    if not current_app.config.get("_DEFAULT_USERS_SEEDED", False):
+def bootstrap():
+    """Create schema once, then seed defaults (runs once per process)."""
+    if not current_app.config.get("_BOOTSTRAPPED", False):
+        try:
+            init_db_scheme()
+        except Exception as e:
+            current_app.logger.warning(f"[schema] init failed: {e}")
         seed_default_users()
-        current_app.config["_DEFAULT_USERS_SEEDED"] = True
+        current_app.config["_BOOTSTRAPPED"] = True
 
 @auth.route('/signup', methods=['GET', 'POST'])
 def signup():
     form = SignupForm()
-
     if form.validate_on_submit():
-        email = form.email.data
+        email = (form.email.data or "").strip()  # keep capitalization
         first_name = form.first_name.data
         password = form.password.data
-        user_type = form.user_type.data
+        is_admin = (form.user_type.data == 'admin')
 
-        is_admin = (user_type == 'admin')
         result = add_entry(email, first_name, password, is_admin)
-
         if result == 'success':
             flash('Registration successful! Please log in.', category='success')
             return redirect(url_for('auth.login'))
@@ -95,17 +106,15 @@ def signup():
 @auth.route('/login/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+        email = (request.form.get('email') or "").strip()  # keep capitalization
+        password = request.form.get('password') or ""
 
         user = User.get_by_email(email)
-
         valid = False
         if user:
             if _looks_hashed(user.password):
                 valid = check_password_hash(user.password, password)
             else:
-                # Fallback for plaintext after DB reset; also normalize to hash
                 valid = (user.password == password)
                 if valid:
                     _set_hashed_password(user.id, password)
@@ -117,8 +126,8 @@ def login():
             session['is_admin'] = user.is_admin
             flash('You were successfully logged in', category='success')
             return redirect(url_for('views.contacts'))
-        else:
-            flash('Invalid username or password', category='error')
+
+        flash('Invalid username or password', category='error')
 
     return render_template('auth/login.html')
 
